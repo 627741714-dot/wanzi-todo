@@ -6,6 +6,8 @@
 
 纯静态单页，没有任何后端和外部依赖 —— 可以直接传到 GitHub Pages，然后用 iPhone 的 Safari「添加到主屏幕」，用起来和一个 App 没区别。**电脑关了照样能用。**
 
+**线上地址：<https://627741714-dot.github.io/wanzi-todo/>**（iPhone 用 Safari 打开 → 分享 → 添加到主屏幕）
+
 ---
 
 ## 先看效果
@@ -230,7 +232,7 @@ node tools/check-dist.mjs     :: 确认产物没问题
 git add -A && git commit -m "改了啥" && git push
 ```
 
-Pages 会自动重新发布（大约半分钟到几分钟）。
+Pages 会自动重新发布（大约半分钟到几分钟）。仓库是 `627741714-dot/wanzi-todo`，Pages 源是 `master` 分支根目录。
 
 ### 三个一定会遇到的坑
 
