@@ -1,0 +1,17 @@
+# 截图脚本临时目录（Edge 的 user-data-dir，几十 MB）
+.shots/
+
+# 反向验证的源码快照
+.reverse-backup/
+
+# 一次性调试脚本
+.dbg-*.mjs
+.dbg*.mjs
+.probe*.mjs
+.reverse-check.mjs
+.refcheck.mjs
+
+# 系统杂物
+Thumbs.db
+desktop.ini
+.DS_Store

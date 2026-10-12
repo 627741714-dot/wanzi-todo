@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="clean">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>丸梓todo</title>
+<meta name="description" content="按四象限排的待办清单，纯本地存储，离线可用。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="丸梓todo">
+<meta name="theme-color" content="#f6f7fb">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+
+<div class="warn" id="storageWarn" hidden>
+  <b>存不住！</b><span id="storageWarnText"></span>
+</div>
+
+<div class="phone">
+
+  <header class="hd">
+    <div class="hd-l">
+      <h1>丸梓todo</h1>
+      <p class="hd-sub" id="hdSub">先做重要的，再做紧急的</p>
+    </div>
+    <button class="icon-btn" id="btnSheet" type="button" aria-label="设置">
+      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm8.4-2.3.1-1.2-.1-1.2 1.7-1.3a.8.8 0 0 0 .2-1l-1.6-2.8a.8.8 0 0 0-.9-.4l-2 .8a8.6 8.6 0 0 0-2-1.2l-.3-2.1a.8.8 0 0 0-.8-.7h-3.2a.8.8 0 0 0-.8.7l-.3 2.1c-.7.3-1.4.7-2 1.2l-2-.8a.8.8 0 0 0-.9.4L2.9 8.5a.8.8 0 0 0 .2 1l1.7 1.3-.1 1.2.1 1.2-1.7 1.3a.8.8 0 0 0-.2 1l1.6 2.8c.2.3.5.5.9.4l2-.8c.6.5 1.3.9 2 1.2l.3 2.1c0 .4.4.7.8.7h3.2c.4 0 .7-.3.8-.7l.3-2.1c.7-.3 1.4-.7 2-1.2l2 .8c.4.1.7 0 .9-.4l1.6-2.8a.8.8 0 0 0-.2-1l-1.7-1.3Z" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <div class="tick" id="tick">
+    <div class="tick-top">
+      <span class="tick-dot" id="tickDot"></span>
+      <span class="tick-text" id="tickText">—</span>
+    </div>
+    <div class="tick-bars" id="tickBars"></div>
+  </div>
+
+  <div class="search">
+    <svg class="search-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 1 1-4.6 13.4l-3.2 3.2a1 1 0 0 1-1.4-1.4l3.2-3.2A7.5 7.5 0 0 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z" fill="currentColor"/></svg>
+    <input class="search-in" id="searchIn" type="search" placeholder="搜任务…" autocomplete="off" enterkeyhint="search">
+    <button class="search-x" id="searchX" type="button" aria-label="清空搜索" hidden>×</button>
+  </div>
+
+  <main class="pane" id="pane">
+    <div id="paneInner">
+
+      <section class="sec" id="secSoon" hidden>
+        <h2 class="sec-h">
+          <span>最近要交的</span>
+          <span class="sec-n" id="soonN"></span>
+        </h2>
+        <div class="soon" id="soon"></div>
+      </section>
+
+      <section class="sec" id="secHabit" hidden>
+        <h2 class="sec-h">
+          <span>日常打卡</span>
+          <span class="sec-n" id="habitN"></span>
+        </h2>
+        <div id="habits"></div>
+        <div class="heat" id="heatWrap">
+          <div class="heat-head">
+            <span>最近 20 周</span>
+            <span class="heat-legend">
+              <i class="heat-cell lv0"></i>
+              <i class="heat-cell lv1"></i>
+              <i class="heat-cell lv2"></i>
+              <span>少 → 多</span>
+            </span>
+          </div>
+          <div class="heat-grid" id="heat"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="secQuad">
+        <div id="quads"></div>
+      </section>
+
+      <section class="sec" id="secSearchResult" hidden>
+        <div id="searchHits"></div>
+      </section>
+
+      <section class="sec" id="secDone" hidden>
+        <h2 class="sec-h sec-h-btn" id="doneHead">
+          <span>已完成 <span class="sec-n" id="doneN"></span></span>
+          <span class="sec-tri" id="doneTri">▾</span>
+        </h2>
+        <div id="doneList" hidden></div>
+      </section>
+
+      <p class="hint" id="hint"></p>
+    </div>
+  </main>
+
+  <button class="fab" id="fab" type="button" aria-label="加一条任务">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 4a1.2 1.2 0 0 1 1.2 1.2v5.6h5.6a1.2 1.2 0 0 1 0 2.4h-5.6v5.6a1.2 1.2 0 0 1-2.4 0v-5.6H5.2a1.2 1.2 0 0 1 0-2.4h5.6V5.2A1.2 1.2 0 0 1 12 4Z" fill="currentColor"/></svg>
+  </button>
+
+  <footer class="ft">
+    <span>数据只存在这台设备 · <span id="ftCount">0 条</span></span>
+  </footer>
+</div>
+
+<div class="mask" id="editMask" hidden></div>
+<section class="sheet" id="edit" hidden aria-label="任务">
+  <div class="sheet-grip"></div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="edTitle">加一条</h2>
+      <button class="x-btn" id="edClose" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <label class="fld">
+      <span class="fld-l">要做什么</span>
+      <input class="in" id="edTitleIn" type="text" placeholder="例如：写 C 语言实验报告" autocomplete="off">
+    </label>
+
+    <label class="fld">
+      <span class="fld-l">备注（可以不写）</span>
+      <textarea class="in in-area" id="edNote" rows="2" placeholder="细节、地点、别人交代的话…"></textarea>
+    </label>
+
+    <div class="fld">
+      <span class="fld-l">重要性</span>
+      <div class="chips" id="edImp">
+        <button class="chip" type="button" data-imp="0">不重要</button>
+        <button class="chip" type="button" data-imp="1">重要</button>
+      </div>
+      <p class="fld-note" id="impNote">重要的排在同一天的更前面。</p>
+    </div>
+
+    <div class="fld" id="fldDeadline">
+      <span class="fld-l">什么时候交</span>
+      <div class="chips" id="edQuick">
+        <button class="chip" type="button" data-q="none">不设</button>
+        <button class="chip" type="button" data-q="today">今天</button>
+        <button class="chip" type="button" data-q="tomorrow">明天</button>
+        <button class="chip" type="button" data-q="week">下周日</button>
+      </div>
+      <div class="dl-row">
+        <input class="in in-date" id="edDate" type="date">
+        <input class="in in-time" id="edTime" type="time">
+      </div>
+      <p class="fld-note" id="dlNote">只填日期就是当天截止（不填时间不算晚）。</p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">这件事怎么重复</span>
+      <div class="chips" id="edRepeat">
+        <button class="chip" type="button" data-rep="none">只做一次</button>
+        <button class="chip" type="button" data-rep="daily">每天</button>
+        <button class="chip" type="button" data-rep="weekly">每周的几天</button>
+        <button class="chip" type="button" data-rep="every">每隔几天</button>
+      </div>
+      <div class="wk-days" id="edDays" hidden>
+        <button class="dw" type="button" data-d="1">一</button>
+        <button class="dw" type="button" data-d="2">二</button>
+        <button class="dw" type="button" data-d="3">三</button>
+        <button class="dw" type="button" data-d="4">四</button>
+        <button class="dw" type="button" data-d="5">五</button>
+        <button class="dw" type="button" data-d="6">六</button>
+        <button class="dw" type="button" data-d="7">日</button>
+      </div>
+      <div class="every-row" id="edEvery" hidden>
+        <span>每隔</span>
+        <input class="in in-num" id="edEveryN" type="number" min="1" max="365" step="1" value="2">
+        <span>天</span>
+      </div>
+      <p class="fld-note" id="repNote">重复的事会进「日常打卡」，不参与四象限排序。</p>
+    </div>
+
+    <p class="fld-err" id="edErr" hidden></p>
+
+    <div class="sheet-foot">
+      <button class="btn btn-primary" id="edSave" type="button">存下来</button>
+      <button class="btn btn-soft" id="edToggle" type="button" hidden>完成</button>
+      <button class="btn btn-danger" id="edDel" type="button" hidden>删掉</button>
+    </div>
+  </div>
+</section>
+
+<div class="mask" id="setMask" hidden></div>
+<section class="sheet" id="set" hidden aria-label="设置">
+  <div class="sheet-grip"></div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2>设置</h2>
+      <button class="x-btn" id="setClose" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">外观</span>
+      <div class="chips" id="themeChips"></div>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">默认看哪种</span>
+      <div class="chips" id="viewChips"></div>
+      <p class="fld-note">分区：按四象限分开，一眼看出该先碰哪件。清单：全部按急迫程度排成一条。</p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">排序方式</span>
+      <div class="chips" id="sortChips"></div>
+      <p class="fld-note" id="sortNote"></p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">几天内算「紧急」</span>
+      <div class="chips" id="urgentChips"></div>
+      <p class="fld-note">这条线决定四象限里"紧急"的边界，也就是①③象限的分界。</p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">四象限图例</span>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">备份</span>
+      <p class="fld-note">任务和设置都在这个文件里。换手机或者清过 Safari 数据之后，用它一键养回来。</p>
+      <div class="btn-row">
+        <button class="btn btn-soft" id="bkExport" type="button">导出文件</button>
+        <button class="btn btn-soft" id="bkCopy" type="button">复制到剪贴板</button>
+      </div>
+      <textarea class="in in-area" id="bkText" rows="3" placeholder="把备份内容粘贴到这里，然后点下面的「合并恢复」或「完全替换」"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-soft" id="bkPick" type="button">选文件…</button>
+        <button class="btn btn-soft" id="bkMerge" type="button">合并恢复</button>
+        <button class="btn btn-danger" id="bkReplace" type="button">完全替换</button>
+      </div>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+      <p class="fld-msg" id="bkMsg" hidden></p>
+    </div>
+
+    <div class="btn-row btn-row-end">
+      <button class="btn btn-primary" id="setDone" type="button">完成</button>
+    </div>
+  </div>
+</section>
+
+<script src="src/data.js"></script>
+<script src="src/todo-core.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

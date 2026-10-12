@@ -1,0 +1,3211 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="clean">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>丸梓todo</title>
+<!-- 单文件版：CSS / JS / 图标都已内联，可以单独发给别人 -->
+<meta name="description" content="按四象限排的待办清单，纯本地存储，离线可用。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="丸梓todo">
+<meta name="theme-color" content="#f6f7fb">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" href="data:image/png;base64,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">
+<style>
+/* ===========================================================================
+ * style.css —— 丸梓todo
+ *
+ * 三套配色（清爽 / 纸感 / 暗夜），全部靠 html[data-theme] 上的 CSS 变量切换。
+ *
+ * 布局要点：
+ *   .phone 撑满视口（100dvh），.pane 是唯一可滚动的区域，
+ *   底部按钮和表头固定不动 —— 手机上滚动时不会把"加一条"滚没。
+ *
+ * 踩过的坑（照抄课表项目，别再踩）：
+ *   1. [hidden] 必须写 !important。否则 .sheet{display:flex} 这类作者样式会盖掉
+ *      浏览器默认的 display:none，弹层就关不掉了。
+ *   2. 四象限的颜色【不要】染满整张卡。整卡染色的清单在手机上看三屏就晕；
+ *      用左边框 + 小色点表示象限，正文保持中性色。
+ *   3. 次级文字不要用固定的 --ink-2/--ink-3。在有色底（比如紧急卡）上要用
+ *      color-mix 现算，否则暗夜主题会出现浅字压浅底。
+ * ===========================================================================
+ */
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--page-bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  display: flex;
+  justify-content: center;
+}
+
+/* ============================== 三套配色 ============================== */
+
+/* ① 清爽 —— 白底大留白，一个深靛蓝重点色 */
+html[data-theme="clean"] {
+  --page-bg: #eceef4;
+  --app-bg: #f6f7fb;
+  --card: #ffffff;
+  --card-2: #f2f4f9;
+  --ink: #16181f;
+  --ink-2: #5b6070;
+  --ink-3: #9aa0b0;
+  --line: #e6e8ef;
+  --line-2: #d5d9e4;
+  --accent: #4f46e5;
+  --accent-soft: #eceafe;
+  --accent-ink: #ffffff;
+  --q1: #e5484d;
+  --q2: #2f7df6;
+  --q3: #e08a00;
+  --q4: #8b93a7;
+  --good: #12a150;
+  --now-bg: #fff5f5;
+  --shadow: 0 1px 2px rgba(20, 22, 30, .04), 0 6px 18px rgba(20, 22, 30, .05);
+  --shadow-app: 0 18px 50px rgba(20, 22, 30, .14);
+  --theme-color: #f6f7fb;
+}
+
+/* ② 纸感 —— 米色底，像一本笔记本 */
+html[data-theme="paper"] {
+  --page-bg: #e7ded1;
+  --app-bg: #fbf6ee;
+  --card: #fffdf8;
+  --card-2: #f3ece1;
+  --ink: #2f2a25;
+  --ink-2: #6b6156;
+  --ink-3: #a2978a;
+  --line: #ece2d4;
+  --line-2: #dbcfbc;
+  --accent: #b4553a;
+  --accent-soft: #f7e6df;
+  --accent-ink: #fff8f4;
+  --q1: #c2453c;
+  --q2: #3a6ea5;
+  --q3: #b8811f;
+  --q4: #8d8578;
+  --good: #4a7c4e;
+  --now-bg: #fdf0ea;
+  --shadow: 0 1px 2px rgba(90, 70, 40, .05), 0 6px 16px rgba(90, 70, 40, .06);
+  --shadow-app: 0 18px 50px rgba(90, 70, 40, .18);
+  --theme-color: #fbf6ee;
+}
+
+/* ③ 暗夜 —— 深色，晚上看不刺眼。象限色要提亮，否则在深底上发闷。 */
+html[data-theme="night"] {
+  --page-bg: #07080c;
+  --app-bg: #101218;
+  --card: #181b23;
+  --card-2: #1f232d;
+  --ink: #eef1f8;
+  --ink-2: #a8afbf;
+  --ink-3: #6c7386;
+  --line: #262b36;
+  --line-2: #333947;
+  --accent: #7c74ff;
+  --accent-soft: #23214a;
+  --accent-ink: #ffffff;
+  --q1: #ff6b6f;
+  --q2: #5aa2ff;
+  --q3: #ffb340;
+  --q4: #7b8398;
+  --good: #35c46a;
+  --now-bg: #2a1d20;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 20px rgba(0, 0, 0, .25);
+  --shadow-app: 0 18px 50px rgba(0, 0, 0, .6);
+  --theme-color: #101218;
+}
+
+/* ================================ 骨架 ================================ */
+
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  background: var(--app-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+}
+
+@media (min-width: 560px) and (min-height: 620px) {
+  body { align-items: center; padding: 18px 0; }
+  .phone {
+    height: min(880px, calc(100dvh - 36px));
+    border-radius: 26px;
+    box-shadow: var(--shadow-app);
+    border: 1px solid var(--line-2);
+  }
+}
+
+/* 存不下数据的警告条 */
+.warn {
+  position: fixed;
+  left: 0; right: 0; top: 0;
+  z-index: 90;
+  padding: calc(env(safe-area-inset-top) + 8px) 14px 8px;
+  background: #b4232a;
+  color: #fff;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+.warn b { margin-right: 6px; }
+
+/* ================================ 表头 ================================ */
+
+.hd {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 10px;
+}
+.hd-l { flex: 1 1 auto; min-width: 0; }
+.hd h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.hd-sub {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.icon-btn {
+  flex: 0 0 auto;
+  width: 38px; height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.icon-btn:active { transform: scale(.96); }
+
+/* ================================ 提示条 ================================ */
+
+.tick {
+  flex: 0 0 auto;
+  margin: 0 16px 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+}
+.tick.is-alert { background: var(--now-bg); border-color: color-mix(in srgb, var(--q1) 34%, var(--line)); }
+.tick.is-good  { background: color-mix(in srgb, var(--good) 9%, var(--card)); }
+.tick-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.tick-dot {
+  flex: 0 0 auto;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.tick.is-alert .tick-dot { background: var(--q1); }
+.tick.is-good .tick-dot { background: var(--good); }
+.tick-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tick-text b { color: var(--ink); font-weight: 600; }
+.tick-bars {
+  display: flex;
+  gap: 3px;
+  margin-top: 7px;
+  height: 3px;
+}
+.tick-bars i {
+  flex: 1 1 0;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.tick-bars i.on { background: var(--accent); }
+.tick.is-alert .tick-bars i.on { background: var(--q1); }
+
+/* ================================ 搜索 ================================ */
+
+.search {
+  flex: 0 0 auto;
+  position: relative;
+  margin: 0 16px 8px;
+  display: flex;
+  align-items: center;
+}
+.search-ico {
+  position: absolute;
+  left: 11px;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.search-in {
+  width: 100%;
+  padding: 9px 30px 9px 31px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--card-2);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-in::placeholder { color: var(--ink-3); }
+.search-in:focus { border-color: var(--accent); background: var(--card); }
+.search-x {
+  position: absolute;
+  right: 6px;
+  width: 26px; height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ============================== 可滚动区 ============================== */
+
+.pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.pane-inner, #paneInner {
+  padding: 2px 16px 20px;
+}
+
+.sec { margin-bottom: 16px; }
+.sec-h {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  letter-spacing: .2px;
+}
+.sec-n {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.sec-h-btn {
+  cursor: pointer;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+.sec-tri { font-size: 11px; color: var(--ink-3); }
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ============================ 最近要交的 ============================ */
+
+.soon {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.soon::-webkit-scrollbar { display: none; }
+.soon-card {
+  flex: 0 0 auto;
+  width: 146px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--q4);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer;
+  text-align: left;
+}
+.soon-card.t-overdue { border-left-color: var(--q1); }
+.soon-card.t-today   { border-left-color: var(--q1); }
+.soon-card.t-tomorrow{ border-left-color: var(--q3); }
+.soon-card.t-urgent  { border-left-color: var(--q3); }
+.soon-card.t-week    { border-left-color: var(--q2); }
+.soon-t {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.soon-w {
+  display: block;
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.soon-card.t-overdue .soon-w,
+.soon-card.t-today .soon-w { color: var(--q1); font-weight: 600; }
+.soon-card.t-tomorrow .soon-w,
+.soon-card.t-urgent .soon-w { color: var(--q3); font-weight: 600; }
+
+/* ============================== 四象限 ============================== */
+
+.quad { margin-bottom: 12px; }
+.quad-h {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.quad-no {
+  flex: 0 0 auto;
+  width: 17px; height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--q4);
+}
+.quad.q1 .quad-no { background: var(--q1); }
+.quad.q2 .quad-no { background: var(--q2); }
+.quad.q3 .quad-no { background: var(--q3); }
+.quad.q4 .quad-no { background: var(--q4); }
+.quad-t { flex: 0 0 auto; }
+.quad-help { flex: 1 1 auto; min-width: 0; font-size: 10.5px; font-weight: 400; color: var(--ink-3); }
+.quad-n { flex: 0 0 auto; font-size: 10.5px; font-weight: 400; color: var(--ink-3); }
+.quad-body { display: flex; flex-direction: column; gap: 7px; }
+.quad-empty {
+  padding: 11px 12px;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ============================== 任务条 ============================== */
+
+.tk {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+  padding: 10px 11px 10px 9px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--tk-tone, var(--q4));
+  border-radius: 13px;
+  background: var(--card);
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.tk.q1 { --tk-tone: var(--q1); }
+.tk.q2 { --tk-tone: var(--q2); }
+.tk.q3 { --tk-tone: var(--q3); }
+.tk.q4 { --tk-tone: var(--q4); }
+.tk.is-overdue {
+  background: color-mix(in srgb, var(--q1) 7%, var(--card));
+}
+.tk.is-done { opacity: .55; }
+.tk.is-done .tk-t { text-decoration: line-through; }
+
+.tk-check {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border: 1.6px solid var(--line-2);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+}
+.tk-check:active { transform: scale(.9); }
+.tk-check.on {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+.tk-check svg { width: 12px; height: 12px; }
+
+.tk-main { flex: 1 1 auto; min-width: 0; }
+.tk-t {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.tk-star { color: var(--q3); font-size: 11px; margin-left: 3px; }
+.tk-note {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.tk-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.tk-when { display: inline-flex; align-items: center; gap: 3px; }
+.tk-when.t-overdue { color: var(--q1); font-weight: 600; }
+.tk-when.t-today   { color: var(--q1); font-weight: 600; }
+.tk-when.t-tomorrow,
+.tk-when.t-urgent  { color: var(--q3); font-weight: 600; }
+.tk-when.t-week    { color: var(--q2); }
+.tk-rep {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--card-2);
+  color: var(--ink-2);
+}
+.tk-done-when { color: var(--good); }
+
+/* ============================== 日常打卡 ============================== */
+
+.habit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  margin-bottom: 7px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--good);
+  border-radius: 13px;
+  background: var(--card);
+  cursor: pointer;
+}
+.habit.is-on {
+  background: color-mix(in srgb, var(--good) 8%, var(--card));
+  border-left-color: var(--good);
+}
+.habit.is-on .habit-t { text-decoration: line-through; opacity: .65; }
+.habit-main { flex: 1 1 auto; min-width: 0; }
+.habit-t {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.habit-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.habit-streak {
+  flex: 0 0 auto;
+  text-align: right;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+.habit-streak b {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--good);
+}
+
+/* 小热力图 */
+.heat {
+  margin-top: 10px;
+  padding: 10px 11px 11px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+}
+.heat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.heat-legend { display: inline-flex; align-items: center; gap: 3px; }
+.heat-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 2.5px;
+  justify-content: space-between;
+}
+.heat-cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 2.5px;
+  background: var(--card-2);
+}
+.heat-cell.due { background: color-mix(in srgb, var(--good) 16%, var(--card-2)); }
+.heat-cell.lv1 { background: color-mix(in srgb, var(--good) 52%, var(--card-2)); }
+.heat-cell.lv2 { background: var(--good); }
+.heat-cell.future { opacity: .4; }
+.heat-legend .heat-cell { width: 9px; aspect-ratio: auto; height: 9px; }
+
+/* 空态 */
+.empty {
+  padding: 22px 16px;
+  border: 1px dashed var(--line-2);
+  border-radius: 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  text-align: center;
+}
+.empty b { display: block; margin-bottom: 4px; color: var(--ink-2); font-size: 13.5px; }
+
+/* ============================== 加一条 ============================== */
+
+.fab {
+  position: absolute;
+  right: 16px;
+  bottom: calc(50px + env(safe-area-inset-bottom));
+  width: 52px; height: 52px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 42%, transparent);
+  cursor: pointer;
+  z-index: 30;
+}
+.fab:active { transform: scale(.94); }
+
+.ft {
+  flex: 0 0 auto;
+  padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--card);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================== 弹层通用 ============================== */
+
+.mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(12, 14, 20, .42);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  max-height: min(88dvh, 760px);
+  background: var(--app-bg);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -10px 40px rgba(10, 12, 20, .22);
+  animation: sheet-up .22s ease-out;
+}
+@media (min-width: 560px) and (min-height: 620px) {
+  .sheet {
+    left: 50%;
+    right: auto;
+    width: min(480px, calc(100vw - 36px));
+    transform: translateX(-50%);
+    bottom: calc(50dvh - min(440px, calc(50dvh - 18px)));
+    border-radius: 22px;
+  }
+}
+@keyframes sheet-up {
+  from { transform: translateY(16px); opacity: .4; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.sheet-grip {
+  flex: 0 0 auto;
+  width: 38px; height: 4px;
+  margin: 8px auto 0;
+  border-radius: 3px;
+  background: var(--line-2);
+}
+.sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.sheet-head h2 { margin: 0; font-size: 16.5px; font-weight: 700; }
+.x-btn {
+  width: 30px; height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card-2);
+  color: var(--ink-2);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ============================== 表单 ============================== */
+
+.fld { margin-bottom: 15px; }
+.fld-l {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.fld-note {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+.fld-note.is-warn { color: var(--q1); }
+.fld-msg {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.fld-msg.is-good { background: color-mix(in srgb, var(--good) 12%, var(--card)); color: color-mix(in srgb, var(--good) 78%, var(--ink)); }
+.fld-msg.is-bad  { background: color-mix(in srgb, var(--q1) 12%, var(--card));   color: color-mix(in srgb, var(--q1) 78%, var(--ink)); }
+.fld-err {
+  margin: 0 0 12px;
+  font-size: 11.5px;
+  color: var(--q1);
+}
+
+.in {
+  width: 100%;
+  padding: 10px 11px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 11px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.in:focus { border-color: var(--accent); }
+.in::placeholder { color: var(--ink-3); }
+.in-area { font-size: 13px; line-height: 1.55; resize: vertical; min-height: 46px; }
+.in-date, .in-time { font-size: 13px; }
+.in-num { width: 68px; text-align: center; }
+
+.dl-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.every-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.chip {
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chip.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.chip:active { transform: scale(.97); }
+
+.wk-days {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+.dw {
+  flex: 1 1 0;
+  height: 34px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.dw.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.btn-row-end { margin: 4px 0 0; }
+.btn {
+  flex: 1 1 auto;
+  min-width: 88px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.btn:active { transform: scale(.98); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-soft {
+  background: var(--card);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+.btn-danger {
+  background: color-mix(in srgb, var(--q1) 11%, var(--card));
+  border-color: color-mix(in srgb, var(--q1) 30%, var(--line-2));
+  color: var(--q1);
+}
+.sheet-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* 图例 */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lg {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.lg i {
+  flex: 0 0 auto;
+  width: 12px; height: 12px;
+  border-radius: 4px;
+  background: var(--q4);
+}
+.lg.q1 i { background: var(--q1); }
+.lg.q2 i { background: var(--q2); }
+.lg.q3 i { background: var(--q3); }
+.lg.q4 i { background: var(--q4); }
+.lg span.lg-help { color: var(--ink-3); }
+
+/* 已完成 */
+.done-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+  margin-bottom: 6px;
+}
+.done-item .tk-check { width: 20px; height: 20px; }
+.done-item-main { flex: 1 1 auto; min-width: 0; }
+.done-t {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  text-decoration: line-through;
+  word-break: break-word;
+}
+.done-meta { margin-top: 2px; font-size: 10px; color: var(--ink-3); }
+
+/* 搜索结果里命中的字 */
+mark {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* 很窄的屏（iPhone SE 一代之类）：把次要信息收掉，别挤成两行 */
+@media (max-width: 340px) {
+  .hd h1 { font-size: 19px; }
+  .quad-help { display: none; }
+  .soon-card { width: 132px; }
+  .tk { padding: 9px 9px 9px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="warn" id="storageWarn" hidden>
+  <b>存不住！</b><span id="storageWarnText"></span>
+</div>
+
+<div class="phone">
+
+  <header class="hd">
+    <div class="hd-l">
+      <h1>丸梓todo</h1>
+      <p class="hd-sub" id="hdSub">先做重要的，再做紧急的</p>
+    </div>
+    <button class="icon-btn" id="btnSheet" type="button" aria-label="设置">
+      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm8.4-2.3.1-1.2-.1-1.2 1.7-1.3a.8.8 0 0 0 .2-1l-1.6-2.8a.8.8 0 0 0-.9-.4l-2 .8a8.6 8.6 0 0 0-2-1.2l-.3-2.1a.8.8 0 0 0-.8-.7h-3.2a.8.8 0 0 0-.8.7l-.3 2.1c-.7.3-1.4.7-2 1.2l-2-.8a.8.8 0 0 0-.9.4L2.9 8.5a.8.8 0 0 0 .2 1l1.7 1.3-.1 1.2.1 1.2-1.7 1.3a.8.8 0 0 0-.2 1l1.6 2.8c.2.3.5.5.9.4l2-.8c.6.5 1.3.9 2 1.2l.3 2.1c0 .4.4.7.8.7h3.2c.4 0 .7-.3.8-.7l.3-2.1c.7-.3 1.4-.7 2-1.2l2 .8c.4.1.7 0 .9-.4l1.6-2.8a.8.8 0 0 0-.2-1l-1.7-1.3Z" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <div class="tick" id="tick">
+    <div class="tick-top">
+      <span class="tick-dot" id="tickDot"></span>
+      <span class="tick-text" id="tickText">—</span>
+    </div>
+    <div class="tick-bars" id="tickBars"></div>
+  </div>
+
+  <div class="search">
+    <svg class="search-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 1 1-4.6 13.4l-3.2 3.2a1 1 0 0 1-1.4-1.4l3.2-3.2A7.5 7.5 0 0 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z" fill="currentColor"/></svg>
+    <input class="search-in" id="searchIn" type="search" placeholder="搜任务…" autocomplete="off" enterkeyhint="search">
+    <button class="search-x" id="searchX" type="button" aria-label="清空搜索" hidden>×</button>
+  </div>
+
+  <main class="pane" id="pane">
+    <div id="paneInner">
+
+      <section class="sec" id="secSoon" hidden>
+        <h2 class="sec-h">
+          <span>最近要交的</span>
+          <span class="sec-n" id="soonN"></span>
+        </h2>
+        <div class="soon" id="soon"></div>
+      </section>
+
+      <section class="sec" id="secHabit" hidden>
+        <h2 class="sec-h">
+          <span>日常打卡</span>
+          <span class="sec-n" id="habitN"></span>
+        </h2>
+        <div id="habits"></div>
+        <div class="heat" id="heatWrap">
+          <div class="heat-head">
+            <span>最近 20 周</span>
+            <span class="heat-legend">
+              <i class="heat-cell lv0"></i>
+              <i class="heat-cell lv1"></i>
+              <i class="heat-cell lv2"></i>
+              <span>少 → 多</span>
+            </span>
+          </div>
+          <div class="heat-grid" id="heat"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="secQuad">
+        <div id="quads"></div>
+      </section>
+
+      <section class="sec" id="secSearchResult" hidden>
+        <div id="searchHits"></div>
+      </section>
+
+      <section class="sec" id="secDone" hidden>
+        <h2 class="sec-h sec-h-btn" id="doneHead">
+          <span>已完成 <span class="sec-n" id="doneN"></span></span>
+          <span class="sec-tri" id="doneTri">▾</span>
+        </h2>
+        <div id="doneList" hidden></div>
+      </section>
+
+      <p class="hint" id="hint"></p>
+    </div>
+  </main>
+
+  <button class="fab" id="fab" type="button" aria-label="加一条任务">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 4a1.2 1.2 0 0 1 1.2 1.2v5.6h5.6a1.2 1.2 0 0 1 0 2.4h-5.6v5.6a1.2 1.2 0 0 1-2.4 0v-5.6H5.2a1.2 1.2 0 0 1 0-2.4h5.6V5.2A1.2 1.2 0 0 1 12 4Z" fill="currentColor"/></svg>
+  </button>
+
+  <footer class="ft">
+    <span>数据只存在这台设备 · <span id="ftCount">0 条</span></span>
+  </footer>
+</div>
+
+<div class="mask" id="editMask" hidden></div>
+<section class="sheet" id="edit" hidden aria-label="任务">
+  <div class="sheet-grip"></div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="edTitle">加一条</h2>
+      <button class="x-btn" id="edClose" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <label class="fld">
+      <span class="fld-l">要做什么</span>
+      <input class="in" id="edTitleIn" type="text" placeholder="例如：写 C 语言实验报告" autocomplete="off">
+    </label>
+
+    <label class="fld">
+      <span class="fld-l">备注（可以不写）</span>
+      <textarea class="in in-area" id="edNote" rows="2" placeholder="细节、地点、别人交代的话…"></textarea>
+    </label>
+
+    <div class="fld">
+      <span class="fld-l">重要性</span>
+      <div class="chips" id="edImp">
+        <button class="chip" type="button" data-imp="0">不重要</button>
+        <button class="chip" type="button" data-imp="1">重要</button>
+      </div>
+      <p class="fld-note" id="impNote">重要的排在同一天的更前面。</p>
+    </div>
+
+    <div class="fld" id="fldDeadline">
+      <span class="fld-l">什么时候交</span>
+      <div class="chips" id="edQuick">
+        <button class="chip" type="button" data-q="none">不设</button>
+        <button class="chip" type="button" data-q="today">今天</button>
+        <button class="chip" type="button" data-q="tomorrow">明天</button>
+        <button class="chip" type="button" data-q="week">下周日</button>
+      </div>
+      <div class="dl-row">
+        <input class="in in-date" id="edDate" type="date">
+        <input class="in in-time" id="edTime" type="time">
+      </div>
+      <p class="fld-note" id="dlNote">只填日期就是当天截止（不填时间不算晚）。</p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">这件事怎么重复</span>
+      <div class="chips" id="edRepeat">
+        <button class="chip" type="button" data-rep="none">只做一次</button>
+        <button class="chip" type="button" data-rep="daily">每天</button>
+        <button class="chip" type="button" data-rep="weekly">每周的几天</button>
+        <button class="chip" type="button" data-rep="every">每隔几天</button>
+      </div>
+      <div class="wk-days" id="edDays" hidden>
+        <button class="dw" type="button" data-d="1">一</button>
+        <button class="dw" type="button" data-d="2">二</button>
+        <button class="dw" type="button" data-d="3">三</button>
+        <button class="dw" type="button" data-d="4">四</button>
+        <button class="dw" type="button" data-d="5">五</button>
+        <button class="dw" type="button" data-d="6">六</button>
+        <button class="dw" type="button" data-d="7">日</button>
+      </div>
+      <div class="every-row" id="edEvery" hidden>
+        <span>每隔</span>
+        <input class="in in-num" id="edEveryN" type="number" min="1" max="365" step="1" value="2">
+        <span>天</span>
+      </div>
+      <p class="fld-note" id="repNote">重复的事会进「日常打卡」，不参与四象限排序。</p>
+    </div>
+
+    <p class="fld-err" id="edErr" hidden></p>
+
+    <div class="sheet-foot">
+      <button class="btn btn-primary" id="edSave" type="button">存下来</button>
+      <button class="btn btn-soft" id="edToggle" type="button" hidden>完成</button>
+      <button class="btn btn-danger" id="edDel" type="button" hidden>删掉</button>
+    </div>
+  </div>
+</section>
+
+<div class="mask" id="setMask" hidden></div>
+<section class="sheet" id="set" hidden aria-label="设置">
+  <div class="sheet-grip"></div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2>设置</h2>
+      <button class="x-btn" id="setClose" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">外观</span>
+      <div class="chips" id="themeChips"></div>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">默认看哪种</span>
+      <div class="chips" id="viewChips"></div>
+      <p class="fld-note">分区：按四象限分开，一眼看出该先碰哪件。清单：全部按急迫程度排成一条。</p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">排序方式</span>
+      <div class="chips" id="sortChips"></div>
+      <p class="fld-note" id="sortNote"></p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">几天内算「紧急」</span>
+      <div class="chips" id="urgentChips"></div>
+      <p class="fld-note">这条线决定四象限里"紧急"的边界，也就是①③象限的分界。</p>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">四象限图例</span>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">备份</span>
+      <p class="fld-note">任务和设置都在这个文件里。换手机或者清过 Safari 数据之后，用它一键养回来。</p>
+      <div class="btn-row">
+        <button class="btn btn-soft" id="bkExport" type="button">导出文件</button>
+        <button class="btn btn-soft" id="bkCopy" type="button">复制到剪贴板</button>
+      </div>
+      <textarea class="in in-area" id="bkText" rows="3" placeholder="把备份内容粘贴到这里，然后点下面的「合并恢复」或「完全替换」"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-soft" id="bkPick" type="button">选文件…</button>
+        <button class="btn btn-soft" id="bkMerge" type="button">合并恢复</button>
+        <button class="btn btn-danger" id="bkReplace" type="button">完全替换</button>
+      </div>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+      <p class="fld-msg" id="bkMsg" hidden></p>
+    </div>
+
+    <div class="btn-row btn-row-end">
+      <button class="btn btn-primary" id="setDone" type="button">完成</button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* 丸梓todo —— 数据层
+ *
+ * 这里只放"数据长什么样"和"预设值"，不含任何 DOM 操作。
+ * 所有日期一律用【本地时间】构造（new Date(y, m-1, d)），
+ * 绝不用 new Date('2026-10-10') —— 那会被当成 UTC 午夜，东八区整体偏一天。
+ * 日期一律存成 'YYYY-MM-DD' 字符串，时间存成 'HH:MM' 字符串：
+ * 这样字符串直接比大小就是时间先后，不用解析、也不会被时区啃一口。
+ */
+(function (root) {
+  'use strict';
+
+  var META = {
+    appName: '丸梓todo',
+    owner: '丸梓',
+    tagline: '先做重要的，再做紧急的',
+    storageKey: 'wanziTodo.v1',
+    backupKind: 'wanzi-todo',
+    backupVersion: 1
+  };
+
+  /* ---------------------------------------------------------------- 四象限 */
+
+  /* 重要 × 紧急 的 2×2。紧急的界线见 URGENT_DAYS：
+     剩余天数 <= 3（含已逾期）算"紧急"。 */
+  var URGENT_DAYS = 3;
+
+  /* 四象限的固定顺序（列表就按这个顺序分区），以及每区的说法。
+     advice 用的是四象限法则（艾森豪威尔矩阵）的标准处理原则。 */
+  var QUADRANTS = [
+    {
+      key: 'q1',
+      no: '①',
+      title: '重要且紧急',
+      advice: '马上做',
+      important: true,
+      urgent: true,
+      tone: 'q1'
+    },
+    {
+      key: 'q2',
+      no: '②',
+      title: '重要不紧急',
+      advice: '安排时间做',
+      important: true,
+      urgent: false,
+      tone: 'q2'
+    },
+    {
+      key: 'q3',
+      no: '③',
+      title: '紧急不重要',
+      advice: '快速做完',
+      important: false,
+      urgent: true,
+      tone: 'q3'
+    },
+    {
+      key: 'q4',
+      no: '④',
+      title: '不紧急不重要',
+      advice: '能不做就不做',
+      important: false,
+      urgent: false,
+      tone: 'q4'
+    }
+  ];
+
+  /* 紧迫程度分档。key 用来上色，也用来做"离 DDL 还有多久"的文案。
+     max 是"剩余天数 <= max"的上界，最后一档用 null 表示兜底。 */
+  var URGENCY_BUCKETS = [
+    { key: 'overdue', name: '已逾期', max: -1 },
+    { key: 'today', name: '今天截止', max: 0 },
+    { key: 'tomorrow', name: '明天截止', max: 1 },
+    { key: 'urgent', name: '3 天内', max: 3 },
+    { key: 'week', name: '本周内', max: 7 },
+    { key: 'later', name: '还早', max: null }
+  ];
+
+  /* ------------------------------------------------------------ 重复规则 */
+
+  /* 日常任务的重复方式。kind 决定表单里长什么样：
+     daily  = 每天
+     weekly = 每周固定的几天（days 是 1..7，1=周一、7=周日）
+     every  = 每隔 n 天 */
+  var REPEAT_KINDS = [
+    { key: 'daily', name: '每天' },
+    { key: 'weekly', name: '每周的几天' },
+    { key: 'every', name: '每隔几天' }
+  ];
+
+  /* ---------------------------------------------------------------- 外观 */
+
+  var THEMES = [
+    { key: 'clean', name: '清爽', note: '白底大留白，白天用' },
+    { key: 'paper', name: '纸感', note: '米色底，像笔记本' },
+    { key: 'night', name: '暗夜', note: '深色，晚上看不刺眼' }
+  ];
+
+  /* 分区视图：按四象限分开。清单视图：全部按分数排成一条。 */
+  var VIEWS = [
+    { key: 'quad', name: '分区', note: '按四象限分开，一眼看出该先碰哪件' },
+    { key: 'list', name: '清单', note: '全部按急迫程度排成一条' }
+  ];
+
+  var SORTS = [
+    { key: 'auto', name: '自动算分', note: '按 DDL 倒计时算急迫度，重要的稍加分' },
+    { key: 'ddl', name: '只看 DDL', note: '严格按截止时间先后，不看重要性' },
+    { key: 'created', name: '按添加时间', note: '新加的排在上面' }
+  ];
+
+  /* 首页"最近要交的"区块：剩余天数 <= 这个值就顶上首页。 */
+  var SOON_DAYS = 7;
+
+  var DEFAULTS = {
+    theme: 'clean',
+    view: 'quad',
+    sort: 'auto',
+    soonDays: SOON_DAYS,
+    urgentDays: URGENT_DAYS
+  };
+
+  /* 空文档。每次读写都过一遍 normalize，坏数据不会把页面搞崩。 */
+  var EMPTY = {
+    version: 1,
+    seq: 0,
+    items: [],
+    settings: DEFAULTS
+  };
+
+  var API = {
+    META: META,
+    QUADRANTS: QUADRANTS,
+    URGENCY_BUCKETS: URGENCY_BUCKETS,
+    REPEAT_KINDS: REPEAT_KINDS,
+    THEMES: THEMES,
+    VIEWS: VIEWS,
+    SORTS: SORTS,
+    URGENT_DAYS: URGENT_DAYS,
+    SOON_DAYS: SOON_DAYS,
+    DEFAULTS: DEFAULTS,
+    EMPTY: EMPTY
+  };
+
+  root.TodoData = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* 丸梓todo —— 纯逻辑层
+ *
+ * 这个文件不碰 DOM、不碰 localStorage，只吃数据吐数据 —— 所以 node 能直接
+ * require 进来做冒烟测试（tools/smoke.mjs）。
+ *
+ * 三条硬规矩，改代码时别破：
+ *   1. 一律用【本地时间】。new Date(y, m-1, d) 可以，new Date('2026-10-10')
+ *      不行 —— 后者按 UTC 午夜解析，东八区会整体偏一天。
+ *   2. 所有日期比较都先把时间截到当天 00:00 再算差值，不然"今天 09:00 的
+ *      DDL"和"现在 15:00"会算出 0.75 天这种小数，四象限的界线就会飘。
+ *   3. 分数一律是【整数】。浮点会出现 0.30000000000000004 那种鬼东西，
+ *      排序结果不稳定，也没法写死断言。
+ */
+(function (root) {
+  'use strict';
+
+  var D = root.TodoData;
+  if (!D && typeof require === 'function') D = require('./data.js');
+  var META = D.META;
+  var QUADRANTS = D.QUADRANTS;
+  var BUCKETS = D.URGENCY_BUCKETS;
+
+  var DAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  var MS_DAY = 86400000;
+
+  /* ==================================================================
+     日期小工具
+     ================================================================== */
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+  /** Date → 'YYYY-MM-DD'（本地时区，不用 toISOString —— 那是 UTC） */
+  function ymd(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  /** Date → 'HH:MM' */
+  function hm(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+
+  /** 'YYYY-MM-DD' → Date（本地 00:00）。格式不对返回 null，不抛错。 */
+  function parseDay(s) {
+    if (typeof s !== 'string') return null;
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+    if (!m) return null;
+    var y = +m[1], mo = +m[2], da = +m[3];
+    if (mo < 1 || mo > 12 || da < 1 || da > 31) return null;
+    var d = new Date(y, mo - 1, da);
+    /* 杀 2 月 30 日这种输入：Date 会自己滚到 3 月，滚过就说明原日期不合法 */
+    if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== da) return null;
+    return d;
+  }
+
+  /** 'HH:MM' → 当天的分钟数（0..1439）。格式不对返回 null。 */
+  function parseHm(s) {
+    if (typeof s !== 'string') return null;
+    var m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+    if (!m) return null;
+    var h = +m[1], mi = +m[2];
+    if (h > 23 || mi > 59) return null;
+    return h * 60 + mi;
+  }
+
+  /** 把任意 Date 截到当天 00:00（本地） */
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  /** a - b，按【整天】算（都先截到 00:00）。跨月跨年跨闰月都对。 */
+  function daysBetween(a, b) {
+    return Math.round((startOfDay(a) - startOfDay(b)) / MS_DAY);
+  }
+
+  function addDays(d, n) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  }
+
+  /** 周几：1=周一 … 7=周日。注意 getDay() 的周日是 0，别直接拿来当周几用。 */
+  function isoDow(d) { var w = d.getDay(); return w === 0 ? 7 : w; }
+
+  /** 这一周的周一（本地 00:00） */
+  function mondayOf(d) { return addDays(startOfDay(d), -(isoDow(d) - 1)); }
+
+  /* ==================================================================
+     排序分数与紧迫度
+     ================================================================== */
+
+  /** 截断到 [-999, 999]：超过 999 天一律当 999（约 2.7 年后的事不分先后） */
+  function clampDays(n) {
+    if (n > 999) return 999;
+    if (n < -999) return -999;
+    return n;
+  }
+
+  /**
+   * 排序分数 —— 越大越靠前。整数，没有浮点。
+   *
+   *     score = (999 - clamp(daysLeft, ±999)) * 100 + (重要 ? 50 : 0)
+   *
+   * 这样：
+   *   · 没填 DDL            → 0（永远垫底，不管多重要 —— 没有日期就真的算不出急不急）
+   *   · 已逾期 1 天 + 重要   → 100050
+   *   · 今天截止            → 99900
+   *   · 明天截止 + 重要     → 99850（+50 让"同样明天"时重要的压过不重要的）
+   *   · 999 天后            → 0 + 50 —— 会被下面那条 tiebreak 排到没 DDL 的那批后面
+   *
+   * 注意"重要"只值 50 分 = 半天。这是故意的：四象限的排序由 DDL 主导，
+   * 重要性只在"截止日相同"时起作用。
+   */
+  function scoreOf(item, now) {
+    var dl = item.deadline;
+    if (!dl || !dl.date) return 0;
+    var d = parseDay(dl.date);
+    if (!d) return 0;
+    var left = daysBetween(d, now || new Date());
+    return (999 - clampDays(left)) * 100 + (item.important ? 50 : 0);
+  }
+
+  /** 剩余天数。没 DDL / 坏日期 → null（注意：不是 0，0 是"今天截止"） */
+  function daysLeftOf(item, now) {
+    var dl = item.deadline;
+    if (!dl || !dl.date) return null;
+    var d = parseDay(dl.date);
+    if (!d) return null;
+    return daysBetween(d, now || new Date());
+  }
+
+  /** 紧迫度分档：'overdue' / 'today' / 'tomorrow' / 'urgent' / 'week' / 'later' / 'none' */
+  function urgencyOf(item, now) {
+    var left = daysLeftOf(item, now);
+    if (left === null) return 'none';
+    for (var i = 0; i < BUCKETS.length; i++) {
+      var b = BUCKETS[i];
+      if (b.max === null) return b.key;
+      if (left <= b.max) return b.key;
+    }
+    return 'later';
+  }
+
+  /** 是否紧急：未完成 + 有 DDL + 剩余天数 <= urgentDays（含已逾期） */
+  function isUrgent(item, now, urgentDays) {
+    if (item.done) return false;
+    var left = daysLeftOf(item, now);
+    if (left === null) return false;
+    var lim = typeof urgentDays === 'number' ? urgentDays : D.URGENT_DAYS;
+    return left <= lim;
+  }
+
+  /** 落在哪个象限，返回 QUADRANTS 里的那一项。没 DDL 不算紧急 → 落 q2/q4。 */
+  function quadrantOf(item, now, urgentDays) {
+    var important = !!item.important;
+    var urgent = isUrgent(item, now, urgentDays);
+    for (var i = 0; i < QUADRANTS.length; i++) {
+      var q = QUADRANTS[i];
+      if (q.important === important && q.urgent === urgent) return q;
+    }
+    return QUADRANTS[3];
+  }
+
+  /* ==================================================================
+     重复规则（日常任务）
+     ================================================================== */
+
+  function normalizeRepeat(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var kind = raw.kind;
+    if (kind === 'daily') return { kind: 'daily' };
+    if (kind === 'weekly') {
+      var days = [];
+      if (Object.prototype.toString.call(raw.days) === '[object Array]') {
+        for (var i = 0; i < raw.days.length; i++) {
+          var d = Math.round(Number(raw.days[i]));
+          if (d >= 1 && d <= 7 && days.indexOf(d) < 0) days.push(d);
+        }
+      }
+      days.sort(function (a, b) { return a - b; });
+      if (!days.length) return null;
+      return { kind: 'weekly', days: days };
+    }
+    if (kind === 'every') {
+      var n = Math.round(Number(raw.n));
+      if (!(n >= 1) || n > 365) return null;
+      return { kind: 'every', n: n };
+    }
+    return null;
+  }
+
+  /** 是不是"日常"（有合法的重复规则） */
+  function isRepeat(item) { return !!(item && item.repeat); }
+
+  /**
+   * 这一天该不该做这件事。
+   * every 的锚点：任务创建那天（createdAt 的日期）。没有 createdAt 就当第 0 天是锚。
+   */
+  function dueOn(item, day) {
+    var rep = item && item.repeat;
+    if (!rep) return false;
+    if (rep.kind === 'daily') return true;
+    if (rep.kind === 'weekly') return rep.days.indexOf(isoDow(day)) >= 0;
+    if (rep.kind === 'every') {
+      var anchor = startOfDay(new Date(item.createdAt || Date.now()));
+      var n = daysBetween(day, anchor);
+      /* n < 0（比创建日还早）时 JS 的 % 会给负数，+n 再取模修回来 */
+      return ((n % rep.n) + rep.n) % rep.n === 0;
+    }
+    return false;
+  }
+
+  /** 重复规则的中文说法，例如 '每天' / '每周 一、三、五' / '每隔 3 天' */
+  function repeatText(item) {
+    var rep = item && item.repeat;
+    if (!rep) return '';
+    if (rep.kind === 'daily') return '每天';
+    if (rep.kind === 'every') return '每隔 ' + rep.n + ' 天';
+    if (rep.kind === 'weekly') {
+      var names = rep.days.map(function (d) { return DAY_NAMES[d].slice(1); });
+      return '每周 ' + names.join('、');
+    }
+    return '';
+  }
+
+  /* ==================================================================
+     打卡记录（日常任务的完成历史）
+     ================================================================== */
+
+  function normalizeLog(raw) {
+    var out = [];
+    if (Object.prototype.toString.call(raw) === '[object Array]') {
+      var seen = {};
+      for (var i = 0; i < raw.length; i++) {
+        var s = raw[i];
+        if (typeof s !== 'string' || !parseDay(s) || seen[s]) continue;
+        seen[s] = 1;
+        out.push(s);
+      }
+    }
+    out.sort();
+    return out;
+  }
+
+  /** 这一天勾过了吗 */
+  function doneOn(item, day) {
+    if (!item || !item.log) return false;
+    return item.log.indexOf(ymd(day)) >= 0;
+  }
+
+  /** 今天这一格勾了没有（日常任务在列表里就显示这个） */
+  function doneToday(item, now) { return doneOn(item, now || new Date()); }
+
+  /**
+   * 当前连续天数。
+   * 从今天往回数：今天勾了就从今天算，今天还没勾就从昨天算（今天还没过完，
+   * 不该把连续打断）。中间只要哪天该做而没做，就断。
+   */
+  function streakOf(item, now) {
+    if (!isRepeat(item)) return 0;
+    var today = startOfDay(now || new Date());
+    var start = doneOn(item, today) ? today : addDays(today, -1);
+    var n = 0;
+    var cursor = start;
+    /* 上限 3650 天，防止哪天数据坏了把浏览器转死 */
+    for (var i = 0; i < 3650; i++) {
+      if (!dueOn(item, cursor)) { cursor = addDays(cursor, -1); continue; }
+      if (!doneOn(item, cursor)) break;
+      n++;
+      cursor = addDays(cursor, -1);
+    }
+    return n;
+  }
+
+  /** 历史上总共勾了多少次 */
+  function totalChecks(item) { return item && item.log ? item.log.length : 0; }
+
+  /**
+   * 热力图数据：最近 weeks 周、每列一周（周一在上）、每天一格。
+   * 返回 { start, cols: [{ days: [{ date, level, due, future }] }] }
+   *   level 0 = 没做 / 1..2 = 做了（今天的格子给 2，看起来更醒目）
+   *   due   false 表示那天本来就不用做（按重复规则算）
+   *   future true 表示那天还没到
+   */
+  function heatmapOf(items, now, weeks) {
+    var ref = startOfDay(now || new Date());
+    var w = weeks > 0 ? weeks : 20;
+    var monday = mondayOf(ref);
+    /* 从 ref 往前数 (w-1) 个完整的周，再加上本周 —— 所以首列是这个周一
+       往回 (w-1) 周，末列就是本周（含本周剩下的几天，"未来"用 future 标出来）。 */
+    var first = addDays(monday, -(w - 1) * 7);
+    var habits = [];
+    for (var i = 0; i < items.length; i++) if (isRepeat(items[i])) habits.push(items[i]);
+
+    var cols = [];
+    for (var c = 0; c < w; c++) {
+      var days = [];
+      for (var r = 0; r < 7; r++) {
+        var day = addDays(first, c * 7 + r);
+        var due = false;
+        var hits = [];
+        for (var h = 0; h < habits.length; h++) {
+          if (!dueOn(habits[h], day)) continue;
+          due = true;
+          if (doneOn(habits[h], day)) hits.push(habits[h].id);
+        }
+        /* 比"今天"晚就算未来。直接比 Date，别用 daysBetween —— 那个是"整天差"，
+           会把今天也算成 0，语义上不够清楚。 */
+        var future = day.getTime() > ref.getTime();
+        days.push({
+          date: ymd(day),
+          level: hits.length ? (day.getTime() === ref.getTime() ? 2 : 1) : 0,
+          due: due,
+          future: future,
+          hits: hits
+        });
+      }
+      cols.push({ days: days });
+    }
+    return { start: ymd(first), cols: cols };
+  }
+
+  /* ==================================================================
+     规范化（坏数据不许把页面搞崩）
+     ================================================================== */
+
+  var TITLE_MAX = 200;
+  var NOTE_MAX = 2000;
+  var MAX_ITEMS = 2000;
+
+  function cleanText(s, max) {
+    if (typeof s !== 'string') return '';
+    var t = s.replace(/\s+/g, ' ').trim();
+    if (t.length > max) t = t.slice(0, max);
+    return t;
+  }
+
+  /** 单条任务清洗。返回 null 表示这条救不回来，直接丢掉。 */
+  function normalizeItem(raw, fallbackId) {
+    if (!raw || typeof raw !== 'object') return null;
+    var id = Math.round(Number(raw.id));
+    if (!(id > 0)) id = fallbackId;
+    if (!(id > 0)) return null;
+    var title = cleanText(raw.title, TITLE_MAX);
+    if (!title) return null;
+
+    var createdAt = Math.round(Number(raw.createdAt));
+    if (!(createdAt > 0)) createdAt = Date.now();
+    var updatedAt = Math.round(Number(raw.updatedAt));
+    if (!(updatedAt > 0)) updatedAt = createdAt;
+
+    var deadline = null;
+    if (raw.deadline && typeof raw.deadline === 'object') {
+      var dstr = typeof raw.deadline.date === 'string' && parseDay(raw.deadline.date)
+        ? raw.deadline.date.trim()
+        : null;
+      if (dstr) {
+        var hstr = parseHm(raw.deadline.time) !== null ? raw.deadline.time.trim() : '';
+        deadline = { date: dstr, time: hstr };
+      }
+    }
+
+    var repeat = normalizeRepeat(raw.repeat);
+    var done = raw.done === true;
+    var doneAt = Math.round(Number(raw.doneAt));
+    if (!(doneAt > 0)) doneAt = 0;
+    /* 日常任务不用 done 表示状态（它每天重新开始），所以强制抹掉 */
+    if (repeat) { done = false; doneAt = 0; }
+
+    var item = {
+      id: id,
+      title: title,
+      note: cleanText(raw.note, NOTE_MAX),
+      important: raw.important === true,
+      deadline: deadline,
+      repeat: repeat,
+      done: done,
+      doneAt: doneAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt
+    };
+    if (repeat) item.log = normalizeLog(raw.log);
+    return item;
+  }
+
+  var THEME_KEYS = D.THEMES.map(function (t) { return t.key; });
+  var VIEW_KEYS = D.VIEWS.map(function (v) { return v.key; });
+  var SORT_KEYS = D.SORTS.map(function (s) { return s.key; });
+
+  function normalizeSettings(raw) {
+    var out = {
+      theme: D.DEFAULTS.theme,
+      view: D.DEFAULTS.view,
+      sort: D.DEFAULTS.sort,
+      soonDays: D.DEFAULTS.soonDays,
+      urgentDays: D.DEFAULTS.urgentDays
+    };
+    if (!raw || typeof raw !== 'object') return out;
+    if (THEME_KEYS.indexOf(raw.theme) >= 0) out.theme = raw.theme;
+    if (VIEW_KEYS.indexOf(raw.view) >= 0) out.view = raw.view;
+    if (SORT_KEYS.indexOf(raw.sort) >= 0) out.sort = raw.sort;
+    var sd = Math.round(Number(raw.soonDays));
+    if (sd >= 1 && sd <= 60) out.soonDays = sd;
+    var ud = Math.round(Number(raw.urgentDays));
+    if (ud >= 0 && ud <= 30) out.urgentDays = ud;
+    return out;
+  }
+
+  /**
+   * 整份文档清洗：丢重复 id、丢空标题、把 seq 抬到不小于最大 id。
+   * 兼容两种输入：{seq, items, settings} 或直接一个 items 数组。
+   */
+  function normalize(raw) {
+    var seq = 0, items = [], settings = raw && raw.settings;
+    if (Object.prototype.toString.call(raw) === '[object Array]') {
+      items = raw;
+    } else if (raw && typeof raw === 'object') {
+      seq = Math.round(Number(raw.seq));
+      if (!(seq > 0)) seq = 0;
+      if (Object.prototype.toString.call(raw.items) === '[object Array]') items = raw.items;
+    }
+
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < items.length && out.length < MAX_ITEMS; i++) {
+      var it = normalizeItem(items[i], 0);
+      if (!it) continue;
+      if (seen[it.id]) continue;
+      seen[it.id] = 1;
+      out.push(it);
+      if (it.id > seq) seq = it.id;
+    }
+
+    return { version: 1, seq: seq, items: out, settings: normalizeSettings(settings) };
+  }
+
+  /* ==================================================================
+     增删改 —— 都是「吃旧文档、吐新文档」，不改传进来的对象
+     ================================================================== */
+
+  function clone(doc) { return normalize(doc); }
+
+  function requireTitle(title) {
+    var t = cleanText(title, TITLE_MAX);
+    if (!t) {
+      var err = new Error('任务名字不能是空的');
+      err.code = 'EMPTY_TITLE';
+      throw err;
+    }
+    return t;
+  }
+
+  function buildItem(input, id) {
+    var now = Date.now();
+    var item = {
+      id: id,
+      title: requireTitle(input.title),
+      note: cleanText(input.note, NOTE_MAX),
+      important: input.important === true,
+      deadline: null,
+      repeat: normalizeRepeat(input.repeat),
+      done: false,
+      doneAt: 0,
+      createdAt: now,
+      updatedAt: now
+    };
+    if (input.deadline && typeof input.deadline === 'object' && input.deadline.date) {
+      var dstr = parseDay(input.deadline.date) ? input.deadline.date.trim() : null;
+      if (dstr) {
+        item.deadline = {
+          date: dstr,
+          time: parseHm(input.deadline.time) !== null ? input.deadline.time.trim() : ''
+        };
+      }
+    }
+    if (item.repeat) item.log = [];
+    return item;
+  }
+
+  function addItem(doc, input, nowMs) {
+    var next = clone(doc);
+    var id = next.seq + 1;
+    var item = buildItem(input || {}, id);
+    if (typeof nowMs === 'number') { item.createdAt = nowMs; item.updatedAt = nowMs; }
+    next.seq = id;
+    next.items.push(item);
+    return { doc: next, item: item };
+  }
+
+  /** 局部修改。title 传空字符串会被拒（跟新增一样严）。 */
+  function updateItem(doc, id, patch, nowMs) {
+    var next = clone(doc);
+    for (var i = 0; i < next.items.length; i++) {
+      if (next.items[i].id !== id) continue;
+      var it = next.items[i];
+      var p = patch || {};
+      if ('title' in p) it.title = requireTitle(p.title);
+      if ('note' in p) it.note = cleanText(p.note, NOTE_MAX);
+      if ('important' in p) it.important = p.important === true;
+      if ('deadline' in p) {
+        it.deadline = null;
+        if (p.deadline && p.deadline.date && parseDay(p.deadline.date)) {
+          it.deadline = {
+            date: p.deadline.date.trim(),
+            time: parseHm(p.deadline.time) !== null ? p.deadline.time.trim() : ''
+          };
+        }
+      }
+      if ('repeat' in p) {
+        it.repeat = normalizeRepeat(p.repeat);
+        if (it.repeat) {
+          it.done = false;
+          it.doneAt = 0;
+          if (!it.log) it.log = [];
+        } else {
+          delete it.log;
+        }
+      }
+      it.updatedAt = typeof nowMs === 'number' ? nowMs : Date.now();
+      return { doc: next, item: it };
+    }
+    return null;
+  }
+
+  function removeItem(doc, id) {
+    var next = clone(doc);
+    var before = next.items.length;
+    next.items = next.items.filter(function (it) { return it.id !== id; });
+    return next.items.length === before ? null : next;
+  }
+
+  function getItem(doc, id) {
+    for (var i = 0; i < doc.items.length; i++) if (doc.items[i].id === id) return doc.items[i];
+    return null;
+  }
+
+  /**
+   * 勾 / 取消勾。
+   *   · 普通任务：done 取反。
+   *   · 日常任务：把【今天】加进 / 移出 log，done 字段永远保持 false。
+   * 返回 { doc, item, checked } 或 null（找不到 id）。
+   */
+  function toggle(doc, id, now) {
+    var next = clone(doc);
+    var day = now || new Date();
+    for (var i = 0; i < next.items.length; i++) {
+      if (next.items[i].id !== id) continue;
+      var it = next.items[i];
+      it.updatedAt = day.getTime();
+      if (isRepeat(it)) {
+        var key = ymd(day);
+        var at = it.log.indexOf(key);
+        if (at >= 0) it.log.splice(at, 1);
+        else it.log.push(key);
+        it.log.sort();
+        return { doc: next, item: it, checked: at < 0 };
+      }
+      it.done = !it.done;
+      it.doneAt = it.done ? day.getTime() : 0;
+      return { doc: next, item: it, checked: it.done };
+    }
+    return null;
+  }
+
+  /* ==================================================================
+     挑与排
+     ================================================================== */
+
+  /** 普通任务（不含日常）、未完成、不在归档里 */
+  function openTasks(doc) {
+    return doc.items.filter(function (it) { return !isRepeat(it) && !it.done; });
+  }
+
+  function doneTasks(doc) {
+    return doc.items.filter(function (it) { return !isRepeat(it) && it.done; });
+  }
+
+  function habits(doc) {
+    return doc.items.filter(function (it) { return isRepeat(it); });
+  }
+
+  var WEIGHT_IMPORTANT = 50;
+
+  /**
+   * 排序器。返回一个 comparator，直接丢给 Array.prototype.sort。
+   * 一律先按分数（大到小），分数相同时按"谁先加的"（早的在前），
+   * 最后用 id 兜底 —— 保证同一批数据排出来的顺序永远一样（比较器必须稳定，
+   * 否则截图和测试都会随机飘）。
+   */
+  function comparator(doc, sortKey, now) {
+    var s = sortKey || doc.settings.sort || 'auto';
+    return function (a, b) {
+      if (s === 'auto') {
+        var d = scoreOf(b, now) - scoreOf(a, now);
+        if (d) return d;
+      } else if (s === 'ddl') {
+        var da = a.deadline ? a.deadline.date + (a.deadline.time || '') : '\uffff';
+        var db = b.deadline ? b.deadline.date + (b.deadline.time || '') : '\uffff';
+        if (da !== db) return da < db ? -1 : 1;
+      } else if (s === 'created') {
+        if (a.createdAt !== b.createdAt) return b.createdAt - a.createdAt;
+      }
+      if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt;
+      return a.id - b.id;
+    };
+  }
+
+  /**
+   * 分成四象限 + 没 DDL 的一堆。
+   * 没填 DDL 的落 q2（重要）或 q4（不重要），它们本来就在那个象限里，
+   * 只是排序时被分数压到最后 —— 这是设计如此，不是 bug。
+   */
+  function byQuadrant(doc, now) {
+    var out = { q1: [], q2: [], q3: [], q4: [] };
+    var cmp = comparator(doc, 'auto', now);
+    var list = openTasks(doc).slice().sort(cmp);
+    for (var i = 0; i < list.length; i++) {
+      out[quadrantOf(list[i], now, doc.settings.urgentDays).key].push(list[i]);
+    }
+    return out;
+  }
+
+  /** 一条平整的清单（按当前排序设置） */
+  function flatList(doc, now) {
+    return openTasks(doc).slice().sort(comparator(doc, doc.settings.sort, now));
+  }
+
+  /** 逾期没做的（不管重不重要），最新的逾期排前面 */
+  function overdueTasks(doc, now) {
+    return openTasks(doc).filter(function (it) {
+      var left = daysLeftOf(it, now);
+      return left !== null && left < 0;
+    }).sort(comparator(doc, 'auto', now));
+  }
+
+  /** 最近要交的：还有 soonDays 天以内（含逾期）的未完成任务 */
+  function soonTasks(doc, now) {
+    var lim = doc.settings.soonDays;
+    return openTasks(doc).filter(function (it) {
+      var left = daysLeftOf(it, now);
+      return left !== null && left <= lim;
+    }).sort(comparator(doc, 'auto', now));
+  }
+
+  function search(doc, q) {
+    var key = cleanText(q, 100).toLowerCase();
+    if (!key) return null;
+    return doc.items.filter(function (it) {
+      return it.title.toLowerCase().indexOf(key) >= 0 ||
+        (it.note && it.note.toLowerCase().indexOf(key) >= 0);
+    });
+  }
+
+  function stats(doc, now) {
+    var open = openTasks(doc);
+    var done = doneTasks(doc);
+    var hs = habits(doc);
+    var overdue = 0, todayDue = 0;
+    for (var i = 0; i < open.length; i++) {
+      var left = daysLeftOf(open[i], now);
+      if (left === null) continue;
+      if (left < 0) overdue++;
+      else if (left === 0) todayDue++;
+    }
+    var checkedToday = 0;
+    for (var h = 0; h < hs.length; h++) if (doneToday(hs[h], now)) checkedToday++;
+    return {
+      open: open.length,
+      done: done.length,
+      overdue: overdue,
+      todayDue: todayDue,
+      habits: hs.length,
+      checkedToday: checkedToday
+    };
+  }
+
+  /* ==================================================================
+     显示用的文案
+     ================================================================== */
+
+  /** '10/5' */
+  function fmtMd(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
+
+  /** '2026-10-10' → '10/10'；今天/明天/昨天特殊说法 */
+  function whenText(item, now) {
+    var left = daysLeftOf(item, now);
+    if (left === null) return '没定时间';
+    if (left === 0) return '今天';
+    if (left === 1) return '明天';
+    if (left === -1) return '昨天';
+    if (left < 0) return '逾期 ' + (-left) + ' 天';
+    if (left < 7) return left + ' 天后';
+    var d = parseDay(item.deadline.date);
+    return fmtMd(d);
+  }
+
+  /** DDL 完整说法：'10/10 今天 23:59' / '10/15 周四 18:00' / '没定时间' */
+  function deadlineText(item, now) {
+    if (!item.deadline) return '没定时间';
+    var d = parseDay(item.deadline.date);
+    if (!d) return '没定时间';
+    var s = fmtMd(d) + ' ' + DAY_NAMES[isoDow(d)];
+    if (item.deadline.time) s += ' ' + item.deadline.time;
+    return s;
+  }
+
+  /** 距离 DDL 还有多久，给提示条用：'还有 3 天 4 小时' */
+  function countdownText(item, now) {
+    var left = daysLeftOf(item, now);
+    if (left === null) return '';
+    if (left < 0) return '已经过了 ' + (-left) + ' 天';
+    var t = now || new Date();
+    if (left === 0) {
+      if (!item.deadline.time) return '今天截止';
+      var mins = parseHm(item.deadline.time) - (t.getHours() * 60 + t.getMinutes());
+      if (mins <= 0) return '今天截止（时间已过）';
+      return '还有 ' + Math.floor(mins / 60) + ' 小时 ' + (mins % 60) + ' 分钟';
+    }
+    return '还有 ' + left + ' 天';
+  }
+
+  function quadrantName(key) {
+    for (var i = 0; i < QUADRANTS.length; i++) if (QUADRANTS[i].key === key) return QUADRANTS[i].title;
+    return '';
+  }
+
+  /* ==================================================================
+     导出
+     ================================================================== */
+
+  var API = {
+    /* 日期 */
+    pad2: pad2, ymd: ymd, hm: hm, parseDay: parseDay, parseHm: parseHm,
+    startOfDay: startOfDay, daysBetween: daysBetween, addDays: addDays,
+    isoDow: isoDow, mondayOf: mondayOf, DAY_NAMES: DAY_NAMES,
+
+    /* 分数与象限 */
+    scoreOf: scoreOf, daysLeftOf: daysLeftOf, urgencyOf: urgencyOf,
+    isUrgent: isUrgent, quadrantOf: quadrantOf, clampDays: clampDays,
+    WEIGHT_IMPORTANT: WEIGHT_IMPORTANT,
+
+    /* 重复与打卡 */
+    normalizeRepeat: normalizeRepeat, isRepeat: isRepeat, dueOn: dueOn,
+    repeatText: repeatText, normalizeLog: normalizeLog, doneOn: doneOn,
+    doneToday: doneToday, streakOf: streakOf, totalChecks: totalChecks,
+    heatmapOf: heatmapOf,
+
+    /* 规范化 */
+    normalizeItem: normalizeItem, normalizeSettings: normalizeSettings,
+    normalize: normalize, cleanText: cleanText,
+    TITLE_MAX: TITLE_MAX, NOTE_MAX: NOTE_MAX, MAX_ITEMS: MAX_ITEMS,
+
+    /* 增删改 */
+    addItem: addItem, updateItem: updateItem, removeItem: removeItem,
+    getItem: getItem, toggle: toggle,
+
+    /* 挑与排 */
+    comparator: comparator, byQuadrant: byQuadrant, flatList: flatList,
+    openTasks: openTasks, doneTasks: doneTasks, habits: habits,
+    overdueTasks: overdueTasks, soonTasks: soonTasks, search: search, stats: stats,
+
+    /* 文案 */
+    fmtMd: fmtMd, whenText: whenText, deadlineText: deadlineText,
+    countdownText: countdownText, quadrantName: quadrantName
+  };
+
+  root.TodoCore = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* 丸梓todo —— 界面
+ *
+ * 分工：src/data.js 管数据长什么样，src/todo-core.js 管算（纯逻辑、可测），
+ * 这个文件只管"画出来"和"怎么点"。所以逻辑的 bug 都能在 node 里测出来。
+ *
+ * 三个必须知道的约定：
+ *   1. nowDate() 是唯一的"现在"。测试和截图用 window.__T.setNow(...) 假装时间，
+ *      别的代码一律不许直接 new Date() 取当下 —— 否则截图里的"今天"会随机变。
+ *   2. 存设置必须【写进去再读回来比对】，不一致就弹顶部红条。绝不许静默降级。
+ *   3. 所有列表的点击都用事件委托挂在容器上（不是每条都绑），
+ *      因为重新渲染会把 DOM 整个换掉，绑在旧节点上的监听会一起消失。
+ */
+(function () {
+  'use strict';
+
+  var D = window.TodoData;
+  var C = window.TodoCore;
+  var META = D.META;
+
+  var LS_KEY = META.storageKey;
+
+  var state = {
+    doc: C.normalize(null),
+    query: '',
+    doneOpen: false,
+    sheet: '',          // '' | 'edit' | 'set'
+    editing: 0,         // 正在编辑的任务 id，0 表示新建
+    nowOverride: null,
+    storageOk: true,
+    storageMsg: ''
+  };
+
+  /* ------------------------------------------------------------------ DOM */
+
+  var el = {};
+  [
+    'storageWarn', 'storageWarnText', 'hdSub', 'btnSheet', 'tick', 'tickDot', 'tickText', 'tickBars',
+    'searchIn', 'searchX', 'pane', 'paneInner', 'hint', 'ftCount',
+    'secSoon', 'soon', 'soonN', 'secHabit', 'habits', 'habitN', 'heatWrap', 'heat',
+    'secQuad', 'quads', 'secSearchResult', 'searchHits',
+    'secDone', 'doneHead', 'doneN', 'doneTri', 'doneList',
+    'fab',
+    'editMask', 'edit', 'edTitle', 'edClose', 'edTitleIn', 'edNote', 'edImp', 'impNote',
+    'fldDeadline', 'edQuick', 'edDate', 'edTime', 'dlNote', 'edRepeat', 'edDays', 'edEvery',
+    'edEveryN', 'repNote', 'edErr', 'edSave', 'edToggle', 'edDel',
+    'setMask', 'set', 'setClose', 'themeChips', 'viewChips', 'sortChips', 'sortNote',
+    'urgentChips', 'legend', 'bkExport', 'bkCopy', 'bkText', 'bkPick', 'bkMerge', 'bkReplace',
+    'bkFile', 'bkMsg', 'setDone'
+  ].forEach(function (id) { el[id] = document.getElementById(id); });
+
+  /**
+   * 启动前先把"该有的节点"点一遍名。
+   * 少一个节点的话，症状会是某处莫名其妙的 "Cannot read properties of undefined"，
+   * 找起来很费劲 —— 这里直接说清楚是哪个 id 没了。改 HTML 时如果删了某个 id，
+   * 这句会立刻告诉你。
+   */
+  function assertNodes() {
+    var missing = [];
+    for (var k in el) {
+      if (!Object.prototype.hasOwnProperty.call(el, k)) continue;
+      if (!el[k]) missing.push(k);
+    }
+    if (missing.length) {
+      throw new Error('页面上缺少这些节点：' + missing.join(', ') + '（检查 丸梓todo.html 里的 id）');
+    }
+  }
+
+  function nowDate() {
+    return state.nowOverride ? new Date(state.nowOverride.getTime()) : new Date();
+  }
+
+  /* -------------------------------------------------------------- 存与读 */
+
+  var KEY_SETTINGS = 'settings';
+  var KEY_DOC = 'doc';
+
+  /* 一份只读的"设置快照"，用来做"写进去再读回来"的校验 */
+  function settingsSnapshot() {
+    return {
+      theme: state.doc.settings.theme,
+      view: state.doc.settings.view,
+      sort: state.doc.settings.sort,
+      urgentDays: state.doc.settings.urgentDays,
+      soonDays: state.doc.settings.soonDays
+    };
+  }
+
+  function save() {
+    var payload = { version: 1, seq: state.doc.seq, items: state.doc.items, settings: state.doc.settings };
+    var text = JSON.stringify(payload);
+    try {
+      window.localStorage.setItem(LS_KEY, text);
+      /* 写进去再读回来，逐字节比对。不同就说明存储被限制了，必须让用户看见。 */
+      var back = window.localStorage.getItem(LS_KEY);
+      if (back !== text) throw new Error('写进去的和读回来的不一样');
+      if (!state.storageOk) { state.storageOk = true; state.storageMsg = ''; paintWarn(); }
+      return true;
+    } catch (e) {
+      state.storageOk = false;
+      state.storageMsg = '这个浏览器不让存数据（可能是隐私模式，或者存储被禁了）。页面能用，但你一关就全丢。请先点右上角，把数据导出成文件收好。';
+      paintWarn();
+      return false;
+    }
+  }
+
+  /**
+   * 探一次存储：写进去 -> 读回来逐字节比对 -> 删掉。
+   *
+   * 为什么要主动探：只靠 save() 里的校验的话，一个【空清单】的新用户（从来没存过
+   * 任何东西）在隐私模式下打开页面，会看到一切正常、一条警告都没有 —— 直到他辛苦
+   * 加了一堆任务才发现存不住。必须在打开的那一刻就告诉他。
+   */
+  function probeStorage() {
+    var probe = LS_KEY + '.probe';
+    var token = 'ok-' + Date.now();
+    try {
+      window.localStorage.setItem(probe, token);
+      var back = window.localStorage.getItem(probe);
+      window.localStorage.removeItem(probe);
+      if (back !== token) throw new Error('写进去的和读回来的不一样');
+      state.storageOk = true;
+      state.storageMsg = '';
+    } catch (e) {
+      state.storageOk = false;
+      state.storageMsg = '这个浏览器不让存数据（可能是隐私模式，或者存储被禁了）。页面能用，但你一关就全丢。请先点右上角，把数据导出成文件收好。';
+    }
+  }
+
+  function load() {
+    var raw = null;
+    try {
+      raw = window.localStorage.getItem(LS_KEY);
+    } catch (e) {
+      if (state.storageOk) {
+        state.storageOk = false;
+        state.storageMsg = '这个浏览器不让读数据（可能是隐私模式，或者存储被禁了）。页面能用，但你一关就全丢。请先点右上角，把数据导出成文件收好。';
+      }
+      return;
+    }
+    if (!raw) return;
+    var parsed = null;
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+    state.doc = C.normalize(parsed);
+  }
+
+  function paintWarn() {
+    if (!el.storageWarn) return;
+    el.storageWarn.hidden = state.storageOk;
+    if (!state.storageOk && el.storageWarnText) el.storageWarnText.textContent = state.storageMsg;
+  }
+
+  /* ------------------------------------------------------------ 小工具 */
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 16.6 5 12l-1.6 1.6 6.2 6.2L20.8 8.6 19.2 7 9.6 16.6Z" fill="currentColor"/></svg>';
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+  /* ================================================================ 画 */
+
+  function render() {
+    var now = nowDate();
+    renderHeader();
+    renderTick(now);
+    renderSoon(now);
+    renderHabits(now);
+    renderQuads(now);
+    renderSearch(now);
+    renderDone(now);
+    renderFooter();
+    paintSheet();
+  }
+
+  function renderHeader() {
+    el.hdSub.textContent = META.tagline;
+  }
+
+  /* ------------------------------------------------------------ 提示条 */
+
+  function renderTick(now) {
+    var overdue = C.overdueTasks(state.doc, now);
+    var soon = C.soonTasks(state.doc, now);
+    var habits = C.habits(state.doc);
+    var checkedToday = habits.filter(function (h) { return C.doneToday(h, now); }).length;
+    var st = C.stats(state.doc, now);
+
+    var text = '';
+    var cls = '';
+
+    if (overdue.length) {
+      var worst = overdue[0];
+      text = '<b>' + esc(worst.title) + '</b> 已经逾期 ' + (-C.daysLeftOf(worst, now)) + ' 天' +
+        (overdue.length > 1 ? '（还有 ' + (overdue.length - 1) + ' 件逾期的）' : '');
+      cls = 'is-alert';
+    } else if (soon.length) {
+      var next = soon[0];
+      text = '最近要交：<b>' + esc(next.title) + '</b> · ' + C.countdownText(next, now);
+      cls = C.urgencyOf(next, now) === 'today' || C.urgencyOf(next, now) === 'overdue' ? 'is-alert' : '';
+    } else if (habits.length) {
+      if (checkedToday === habits.length) {
+        text = '今天的日常全打卡了，' + habits.length + '/' + habits.length + ' ✓';
+        cls = 'is-good';
+      } else {
+        text = '日常还没打卡：' + (habits.length - checkedToday) + ' 件等着你';
+      }
+    } else if (st.open) {
+      text = '手上有 <b>' + st.open + '</b> 件没做完，都没定时间';
+    } else {
+      text = '一条待办都没有，清静 ✓';
+      cls = 'is-good';
+    }
+
+    el.tick.className = 'tick' + (cls ? ' ' + cls : '');
+    el.tickText.innerHTML = text;
+
+    /* 进度条：每一格是一件没做完的事，做完的格子亮起来 */
+    var total = st.open + st.done + st.habits;
+    var cells = Math.min(20, Math.max(0, total));
+    var onCells = total ? Math.round(cells * ((st.done + st.checkedToday) / total)) : 0;
+    var html = '';
+    for (var i = 0; i < cells; i++) html += '<i class="' + (i < onCells ? 'on' : '') + '"></i>';
+    el.tickBars.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------ 最近要交的 */
+
+  function renderSoon(now) {
+    var list = C.soonTasks(state.doc, now);
+    if (!list.length) { el.secSoon.hidden = true; el.soon.innerHTML = ''; return; }
+    el.secSoon.hidden = false;
+    el.soonN.textContent = list.length + ' 件';
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var it = list[i];
+      var u = C.urgencyOf(it, now);
+      html += '<button class="soon-card t-' + u + '" type="button" data-open="' + it.id + '">' +
+        '<span class="soon-t">' + (it.important ? '<span class="tk-star">★</span>' : '') + esc(it.title) + '</span>' +
+        '<span class="soon-w">' + esc(C.whenText(it, now)) +
+        (it.deadline && it.deadline.time ? ' ' + esc(it.deadline.time) : '') + '</span>' +
+        '</button>';
+    }
+    el.soon.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------ 日常 */
+
+  function renderHabits(now) {
+    var list = C.habits(state.doc);
+    if (!list.length) { el.secHabit.hidden = true; el.habits.innerHTML = ''; return; }
+    el.secHabit.hidden = false;
+
+    /* 今天该做的排前面，然后是还没勾的，最后按 id 稳定 */
+    var dueToday = [];
+    var rest = [];
+    for (var i = 0; i < list.length; i++) {
+      if (C.dueOn(list[i], now)) dueToday.push(list[i]);
+      else rest.push(list[i]);
+    }
+    dueToday.sort(function (a, b) {
+      var da = C.doneToday(a, now) ? 1 : 0, db = C.doneToday(b, now) ? 1 : 0;
+      if (da !== db) return da - db;
+      return a.id - b.id;
+    });
+    rest.sort(function (a, b) { return a.id - b.id; });
+    var ordered = dueToday.concat(rest);
+
+    var doneN = 0, dueN = 0;
+    var html = '';
+    for (var j = 0; j < ordered.length; j++) {
+      var h = ordered[j];
+      var on = C.doneToday(h, now);
+      var due = C.dueOn(h, now);
+      if (due) { dueN++; if (on) doneN++; }
+      var streak = C.streakOf(h, now);
+      html += '<div class="habit' + (on ? ' is-on' : '') + '" data-habit="' + h.id + '">' +
+        '<button class="tk-check' + (on ? ' on' : '') + '" type="button" data-habit="' + h.id + '" aria-label="打卡">' + CHECK_SVG + '</button>' +
+        '<div class="habit-main">' +
+        '<span class="habit-t">' + esc(h.title) + '</span>' +
+        '<div class="habit-meta">' +
+        '<span class="tk-rep">' + esc(C.repeatText(h)) + '</span>' +
+        (due ? '' : '<span>今天不用做</span>') +
+        (streak >= 2 ? '<span>连着 ' + streak + ' 次了</span>' : '') +
+        '</div></div>' +
+        '<div class="habit-streak"><b>' + streak + '</b>连续</div>' +
+        '</div>';
+    }
+    el.habits.innerHTML = html;
+    el.habitN.textContent = dueN ? (doneN + '/' + dueN + ' 今天') : '今天都歇着';
+
+    el.heatWrap.hidden = false;
+    el.heat.innerHTML = heatHtml(now);
+  }
+
+  function heatHtml(now) {
+    var hm = C.heatmapOf(state.doc.items, now, 20);
+    var html = '';
+    for (var c = 0; c < hm.cols.length; c++) {
+      for (var r = 0; r < 7; r++) {
+        var d = hm.cols[c].days[r];
+        var cls = 'heat-cell';
+        if (d.level === 1) cls += ' lv1';
+        else if (d.level === 2) cls += ' lv2';
+        else if (d.due && !d.future) cls += ' due';
+        if (d.future) cls += ' future';
+        html += '<i class="' + cls + '" title="' + esc(d.date) + '"></i>';
+      }
+    }
+    return html;
+  }
+
+  /* --------------------------------------------------------- 四象限 */
+
+  function renderQuads(now) {
+    if (state.doc.settings.view === 'list') { renderFlat(now); return; }
+    var groups = C.byQuadrant(state.doc, now);
+    var html = '';
+    for (var i = 0; i < D.QUADRANTS.length; i++) {
+      var q = D.QUADRANTS[i];
+      var list = groups[q.key];
+      html += '<div class="quad ' + q.key + '">' +
+        '<h3 class="quad-h">' +
+        '<span class="quad-no">' + q.no + '</span>' +
+        '<span class="quad-t">' + esc(q.title) + '</span>' +
+        '<span class="quad-help">' + esc(q.advice) + '</span>' +
+        '<span class="quad-n">' + list.length + '</span>' +
+        '</h3><div class="quad-body">';
+      if (!list.length) {
+        html += '<div class="quad-empty">' + quadEmptyText(q, now) + '</div>';
+      } else {
+        for (var j = 0; j < list.length; j++) html += taskHtml(list[j], now);
+      }
+      html += '</div></div>';
+    }
+    el.quads.innerHTML = html;
+    el.secQuad.hidden = false;
+  }
+
+  function quadEmptyText(q, now) {
+    if (q.key === 'q1') return '没有火烧眉毛的事，挺好';
+    if (q.key === 'q2') return '这里空着说明你只在救火';
+    if (q.key === 'q3') {
+      var undated = C.openTasks(state.doc).filter(function (t) {
+        return !t.important && C.daysLeftOf(t, now) === null;
+      }).length;
+      return undated ? '没填时间的都落在④了，紧急的事一件没有' : '眼下没有急着交的杂事';
+    }
+    return '空的 —— 保持';
+  }
+
+  function renderFlat(now) {
+    var list = C.flatList(state.doc, now);
+    var html = '';
+    if (!list.length) {
+      html = '<div class="empty"><b>一条待办都没有</b>点右下角的 ＋ 加一件试试</div>';
+    } else {
+      for (var i = 0; i < list.length; i++) html += taskHtml(list[i], now);
+    }
+    el.quads.innerHTML = html;
+    el.secQuad.hidden = false;
+  }
+
+  /**
+   * 一条任务。左边的色条 = 象限，别把整张卡染色（三屏看下来会晕）。
+   * --tk-tone 由 .q1/.q2/.q3/.q4 决定。
+   */
+  function taskHtml(it, now) {
+    var q = C.quadrantOf(it, now, state.doc.settings.urgentDays);
+    var u = C.urgencyOf(it, now);
+    var left = C.daysLeftOf(it, now);
+    var cls = 'tk ' + q.key + (u === 'overdue' ? ' is-overdue' : '');
+    var when = C.whenText(it, now);
+    var extra = '';
+    if (it.deadline && it.deadline.time && left !== null && left >= 0) extra = ' ' + esc(it.deadline.time);
+    if (left !== null && C.urgencyOf(it, now) !== 'later') extra = '';
+
+    var meta = '<div class="tk-meta">' +
+      '<span class="tk-when t-' + u + '">' + esc(when) + extra + '</span>';
+    if (it.deadline) meta += '<span>' + esc(C.deadlineText(it, now)) + '</span>';
+    if (it.note) meta += '<span>·</span><span>' + esc(it.note.length > 18 ? it.note.slice(0, 18) + '…' : it.note) + '</span>';
+    meta += '</div>';
+
+    return '<div class="' + cls + '" data-tk="' + it.id + '">' +
+      '<button class="tk-check" type="button" data-check="' + it.id + '" aria-label="完成">' + CHECK_SVG + '</button>' +
+      '<div class="tk-main">' +
+      '<span class="tk-t">' + esc(it.title) + (it.important ? '<span class="tk-star">★</span>' : '') + '</span>' +
+      (it.note ? '<p class="tk-note">' + esc(it.note) + '</p>' : '') +
+      meta +
+      '</div></div>';
+  }
+
+  /* --------------------------------------------------------- 搜索 */
+
+  function renderSearch(now) {
+    if (!state.query) {
+      el.secSearchResult.hidden = true;
+      el.searchHits.innerHTML = '';
+      el.searchX.hidden = true;
+      return;
+    }
+    el.searchX.hidden = false;
+    var hits = C.search(state.doc, state.query) || [];
+    el.secSearchResult.hidden = false;
+    /* 搜索时把四象限和日常藏起来，只留结果 —— 不然翻半天找不到命中的那条 */
+    el.secQuad.hidden = true;
+    el.secHabit.hidden = true;
+    el.secSoon.hidden = true;
+    el.secDone.hidden = true;
+
+    var html = '';
+    if (!hits.length) {
+      html = '<div class="empty"><b>没搜到「' + esc(state.query) + '」</b>换个词试试，或者清空搜索看全部</div>';
+    } else {
+      html = '<div class="sec-h"><span>搜到 ' + hits.length + ' 条</span></div>';
+      for (var i = 0; i < hits.length; i++) {
+        var it = hits[i];
+        var q = C.quadrantOf(it, now, state.doc.settings.urgentDays);
+        html += '<div class="tk ' + q.key + (it.done ? ' is-done' : '') + '" data-tk="' + it.id + '">' +
+          '<button class="tk-check' + ((it.done || C.doneToday(it, now)) ? ' on' : '') + '" type="button" data-check="' + it.id + '" aria-label="完成">' + CHECK_SVG + '</button>' +
+          '<div class="tk-main"><span class="tk-t">' + mark(it.title, state.query) + (it.important ? '<span class="tk-star">★</span>' : '') + '</span>' +
+          (it.note ? '<p class="tk-note">' + mark(it.note, state.query) + '</p>' : '') +
+          '<div class="tk-meta">' +
+          (C.isRepeat(it) ? '<span class="tk-rep">' + esc(C.repeatText(it)) + '</span>' : '<span class="tk-when t-' + C.urgencyOf(it, now) + '">' + esc(C.whenText(it, now)) + '</span>') +
+          (it.deadline ? '<span>' + esc(C.deadlineText(it, now)) + '</span>' : '') +
+          '</div></div></div>';
+      }
+    }
+    el.searchHits.innerHTML = html;
+  }
+
+  function mark(text, q) {
+    var safe = esc(text);
+    var key = String(q).trim();
+    if (!key) return safe;
+    var re = new RegExp('(' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return safe.replace(re, '<mark>$1</mark>');
+  }
+
+  /* --------------------------------------------------------- 已完成 */
+
+  function renderDone(now) {
+    if (state.query) return;
+    var list = C.doneTasks(state.doc).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
+    if (!list.length) { el.secDone.hidden = true; el.doneList.innerHTML = ''; return; }
+    el.secDone.hidden = false;
+    el.doneN.textContent = list.length + ' 条';
+    el.doneTri.textContent = state.doneOpen ? '▴' : '▾';
+    el.doneList.hidden = !state.doneOpen;
+    if (!state.doneOpen) { el.doneList.innerHTML = ''; return; }
+    var html = '';
+    var shown = list.slice(0, 50);
+    for (var i = 0; i < shown.length; i++) {
+      var it = shown[i];
+      html += '<div class="done-item" data-tk="' + it.id + '">' +
+        '<button class="tk-check on" type="button" data-check="' + it.id + '" aria-label="恢复">' + CHECK_SVG + '</button>' +
+        '<div class="done-item-main">' +
+        '<div class="done-t">' + esc(it.title) + '</div>' +
+        '<div class="done-meta">' + (it.doneAt ? '完成于 ' + fmtDone(it.doneAt) : '已完成') + '</div>' +
+        '</div></div>';
+    }
+    if (list.length > shown.length) html += '<p class="hint">还有 ' + (list.length - shown.length) + ' 条更早的没显示</p>';
+    el.doneList.innerHTML = html;
+  }
+
+  function fmtDone(ms) {
+    var d = new Date(ms);
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+
+  /* ------------------------------------------------------------ 页脚 */
+
+  function renderFooter() {
+    var n = state.doc.items.length;
+    el.ftCount.textContent = n + ' 条';
+    el.hint.textContent = state.doc.settings.view === 'list'
+      ? '排序：' + sortName(state.doc.settings.sort) + ' · 点任务可以改 DDL 和重要性'
+      : '四象限：①马上做 ②安排时间做 ③快速做完 ④能不做就不做 · 点任务能改';
+  }
+
+  function sortName(key) {
+    for (var i = 0; i < D.SORTS.length; i++) if (D.SORTS[i].key === key) return D.SORTS[i].name;
+    return key;
+  }
+
+  /* ================================================================ 改 */
+
+  function commit(fn) {
+    var out = fn();
+    if (!out) return false;
+    state.doc = out;
+    save();
+    render();
+    return true;
+  }
+
+  function toggleItem(id) {
+    commit(function () { return (C.toggle(state.doc, id, nowDate()) || {}).doc || null; });
+  }
+
+  /* ================================================================ 弹层 */
+
+  function paintSheet() {
+    var editing = state.sheet === 'edit';
+    var setting = state.sheet === 'set';
+    el.edit.hidden = !editing;
+    el.editMask.hidden = !editing;
+    el.set.hidden = !setting;
+    el.setMask.hidden = !setting;
+    document.body.classList.toggle('sheet-open', editing || setting);
+  }
+
+  function openSheet(which) {
+    state.sheet = which;
+    paintSheet();
+    if (which === 'edit') el.edTitleIn.focus();
+  }
+
+  function closeSheet() {
+    state.sheet = '';
+    state.editing = 0;
+    el.edErr.hidden = true;
+    paintSheet();
+  }
+
+  /* ---------------------------------------------------- 编辑一条任务 */
+
+  var form = {
+    important: false,
+    date: '',
+    time: '',
+    repeat: null,
+    days: []
+  };
+
+  function openEdit(id) {
+    state.editing = id || 0;
+    el.edErr.hidden = true;
+    if (id) {
+      var it = C.getItem(state.doc, id);
+      if (!it) return;
+      form.important = !!it.important;
+      form.date = it.deadline ? it.deadline.date : '';
+      form.time = it.deadline ? (it.deadline.time || '') : '';
+      form.repeat = it.repeat ? it.repeat.kind : null;
+      form.days = it.repeat && it.repeat.kind === 'weekly' ? it.repeat.days.slice() : [];
+      el.edTitle.textContent = '改这一条';
+      el.edTitleIn.value = it.title;
+      el.edNote.value = it.note || '';
+      el.edEveryN.value = it.repeat && it.repeat.kind === 'every' ? it.repeat.n : 2;
+      el.edToggle.hidden = C.isRepeat(it);
+      el.edToggle.textContent = it.done ? '还没做完' : '完成';
+      el.edDel.hidden = false;
+      el.fldDeadline.hidden = C.isRepeat(it);
+    } else {
+      form.important = false;
+      form.date = '';
+      form.time = '';
+      form.repeat = null;
+      form.days = [];
+      el.edTitle.textContent = '加一条';
+      el.edTitleIn.value = '';
+      el.edNote.value = '';
+      el.edEveryN.value = 2;
+      el.edToggle.hidden = true;
+      el.edDel.hidden = true;
+      el.fldDeadline.hidden = false;
+    }
+    paintForm();
+    openSheet('edit');
+  }
+
+  function paintForm() {
+    /* 重要性 */
+    var impChips = el.edImp.querySelectorAll('.chip');
+    for (var i = 0; i < impChips.length; i++) {
+      impChips[i].classList.toggle('is-on', (impChips[i].getAttribute('data-imp') === '1') === !!form.important);
+    }
+    /* 重复 */
+    var repChips = el.edRepeat.querySelectorAll('.chip');
+    for (var j = 0; j < repChips.length; j++) {
+      var k = repChips[j].getAttribute('data-rep');
+      repChips[j].classList.toggle('is-on', (k === 'none' && !form.repeat) || k === form.repeat);
+    }
+    el.edDays.hidden = form.repeat !== 'weekly';
+    el.edEvery.hidden = form.repeat !== 'every';
+    var dws = el.edDays.querySelectorAll('.dw');
+    for (var m = 0; m < dws.length; m++) {
+      dws[m].classList.toggle('is-on', form.days.indexOf(+dws[m].getAttribute('data-d')) >= 0);
+    }
+    /* DDL */
+    var quick = el.edQuick.querySelectorAll('.chip');
+    for (var n = 0; n < quick.length; n++) {
+      var q = quick[n].getAttribute('data-q');
+      var match = false;
+      var now = nowDate();
+      if (q === 'none') match = !form.date;
+      else if (q === 'today') match = form.date === C.ymd(now);
+      else if (q === 'tomorrow') match = form.date === C.ymd(C.addDays(now, 1));
+      else if (q === 'week') match = form.date === C.ymd(C.addDays(C.mondayOf(now), 6));
+      quick[n].classList.toggle('is-on', match);
+    }
+    el.edDate.value = form.date;
+    el.edTime.value = form.time;
+    paintDeadlineNote();
+  }
+
+  function paintDeadlineNote() {
+    if (!form.date) {
+      el.dlNote.className = 'fld-note';
+      el.dlNote.textContent = '没定时间的事排在所有定了时间的事后面（哪怕你标了重要）。';
+      return;
+    }
+    var d = C.parseDay(form.date);
+    var left = C.daysBetween(d, nowDate());
+    var txt = C.fmtMd(d) + ' ' + C.DAY_NAMES[C.isoDow(d)];
+    if (left < 0) txt += '，已经过了 ' + (-left) + ' 天';
+    else if (left === 0) txt += '，今天截止';
+    else txt += '，还有 ' + left + ' 天';
+    if (form.time) txt += ' ' + form.time;
+    else txt += '（只到日期，不填时间不算晚）';
+    el.dlNote.className = 'fld-note' + (left < 0 ? ' is-warn' : '');
+    el.dlNote.textContent = txt;
+  }
+
+  function saveForm() {
+    var title = el.edTitleIn.value.trim();
+    if (!title) {
+      el.edErr.hidden = false;
+      el.edErr.textContent = '先给这件事起个名字吧';
+      el.edTitleIn.focus();
+      return;
+    }
+    if (form.repeat === 'weekly' && !form.days.length) {
+      el.edErr.hidden = false;
+      el.edErr.textContent = '「每周的几天」至少要选一天';
+      return;
+    }
+    var repeat = null;
+    if (form.repeat === 'daily') repeat = { kind: 'daily' };
+    else if (form.repeat === 'weekly') repeat = { kind: 'weekly', days: form.days.slice() };
+    else if (form.repeat === 'every') {
+      var n = Math.round(Number(el.edEveryN.value));
+      if (!(n >= 1) || n > 365) {
+        el.edErr.hidden = false;
+        el.edErr.textContent = '「每隔几天」要填 1 到 365 之间的整数';
+        return;
+      }
+      repeat = { kind: 'every', n: n };
+    }
+    var input = {
+      title: title,
+      note: el.edNote.value,
+      important: !!form.important,
+      deadline: form.date ? { date: form.date, time: form.time } : null,
+      repeat: repeat
+    };
+    var okGo = false;
+    /* 逻辑层也会挡一道（requireTitle 会抛），这里接住它变成人话，
+       免得任何意外都变成控制台里一条看不懂的红字。 */
+    try {
+      if (state.editing) {
+        var out = C.updateItem(state.doc, state.editing, input);
+        if (out) { state.doc = out.doc; okGo = true; }
+      } else {
+        var added = C.addItem(state.doc, input);
+        state.doc = added.doc;
+        okGo = true;
+      }
+    } catch (e) {
+      el.edErr.hidden = false;
+      el.edErr.textContent = e && e.code === 'EMPTY_TITLE' ? '先给这件事起个名字吧' : '存不下来：' + (e && e.message ? e.message : '原因不明');
+      return;
+    }
+    if (okGo) { save(); closeSheet(); render(); }
+  }
+
+  /* -------------------------------------------------------- 设置抽屉 */
+
+  function paintChips() {
+    var s = state.doc.settings;
+    el.themeChips.innerHTML = D.THEMES.map(function (t) {
+      return '<button class="chip' + (t.key === s.theme ? ' is-on' : '') + '" type="button" data-theme="' + t.key + '">' + esc(t.name) + '</button>';
+    }).join('');
+    el.viewChips.innerHTML = D.VIEWS.map(function (v) {
+      return '<button class="chip' + (v.key === s.view ? ' is-on' : '') + '" type="button" data-view="' + v.key + '">' + esc(v.name) + '</button>';
+    }).join('');
+    el.sortChips.innerHTML = D.SORTS.map(function (v) {
+      return '<button class="chip' + (v.key === s.sort ? ' is-on' : '') + '" type="button" data-sort="' + v.key + '">' + esc(v.name) + '</button>';
+    }).join('');
+    el.urgentChips.innerHTML = [0, 1, 3, 5, 7].map(function (n) {
+      return '<button class="chip' + (n === s.urgentDays ? ' is-on' : '') + '" type="button" data-urgent="' + n + '">' + (n === 0 ? '只有今天' : n + ' 天内') + '</button>';
+    }).join('');
+    /* 当前排序的说明 */
+    var cur = null;
+    for (var i = 0; i < D.SORTS.length; i++) if (D.SORTS[i].key === s.sort) cur = D.SORTS[i];
+    el.sortNote.textContent = cur ? cur.note + (s.sort === 'auto' ? '：分数 = (999 − 剩余天数) × 100 +（重要加 50）。没填 DDL 的一律 0 分，永远垫底。' : '') : '';
+    el.legend.innerHTML = D.QUADRANTS.map(function (q) {
+      return '<div class="lg ' + q.key + '"><i></i><span>' + q.no + ' ' + esc(q.title) + '</span><span class="lg-help">' + esc(q.advice) + '</span></div>';
+    }).join('');
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.doc.settings.theme);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', themeColorOf(state.doc.settings.theme));
+  }
+
+  function themeColorOf(key) {
+    /* 和 style.css 里每个 --theme-color 一一对应。硬编码是因为 meta 拿不到 CSS 变量。 */
+    if (key === 'paper') return '#fbf6ee';
+    if (key === 'night') return '#101218';
+    return '#f6f7fb';
+  }
+
+  function setSetting(patch) {
+    var s = state.doc.settings;
+    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) s[k] = patch[k];
+    save();
+    applyTheme();
+    paintChips();
+    render();
+  }
+
+  /* ================================================================ 备份 */
+
+  var BK_KIND = META.backupKind;
+  var BK_VERSION = META.backupVersion;
+
+  function fingerprint() {
+    return { appName: META.appName, count: state.doc.items.length, seq: state.doc.seq };
+  }
+
+  function makeBackup() {
+    return {
+      kind: BK_KIND,
+      version: BK_VERSION,
+      exportedAt: new Date().toISOString(),
+      app: META.appName,
+      fingerprint: fingerprint(),
+      doc: { version: 1, seq: state.doc.seq, items: state.doc.items, settings: state.doc.settings }
+    };
+  }
+
+  function bkSay(msg, bad) {
+    el.bkMsg.hidden = false;
+    el.bkMsg.className = 'fld-msg ' + (bad ? 'is-bad' : 'is-good');
+    el.bkMsg.textContent = msg;
+  }
+
+  var DROP_NAMES = { theme: '外观', view: '默认视图', sort: '排序方式', urgentDays: '紧急界线', soonDays: '最近要交的天数' };
+
+  function parseBackup(text) {
+    var raw = String(text == null ? '' : text).trim();
+    if (!raw) return { ok: false, error: '还没有内容 —— 先选一个备份文件，或者把备份内容粘贴进来。' };
+    var obj = null;
+    try { obj = JSON.parse(raw); } catch (e) {
+      return { ok: false, error: '这段内容不是合法的 JSON，看看是不是复制漏了。' };
+    }
+    if (!obj || typeof obj !== 'object') return { ok: false, error: '备份内容的格式不对。' };
+    if (obj.kind !== BK_KIND) return { ok: false, error: '这看起来不是「' + META.appName + '」的备份。' };
+    if (!obj.doc || typeof obj.doc !== 'object') return { ok: false, error: '备份里没有任务内容。' };
+
+    var doc = C.normalize(obj.doc);
+    var dropped = [];
+    var rawSettings = obj.doc.settings;
+    if (rawSettings && typeof rawSettings === 'object') {
+      if (rawSettings.theme && rawSettings.theme !== doc.settings.theme) dropped.push(DROP_NAMES.theme);
+      if (rawSettings.view && rawSettings.view !== doc.settings.view) dropped.push(DROP_NAMES.view);
+      if (rawSettings.sort && rawSettings.sort !== doc.settings.sort) dropped.push(DROP_NAMES.sort);
+      if (rawSettings.urgentDays !== undefined && Math.round(Number(rawSettings.urgentDays)) !== doc.settings.urgentDays) dropped.push(DROP_NAMES.urgentDays);
+      if (rawSettings.soonDays !== undefined && Math.round(Number(rawSettings.soonDays)) !== doc.settings.soonDays) dropped.push(DROP_NAMES.soonDays);
+    }
+
+    var note = '';
+    var fp = obj.fingerprint;
+    if (fp && typeof fp === 'object' && fp.appName && fp.appName !== META.appName) {
+      note = '这份备份来自「' + fp.appName + '」，能用，但内容可能对不上。';
+    }
+
+    return { ok: true, doc: doc, dropped: dropped, note: note, exportedAt: obj.exportedAt || '' };
+  }
+
+  function applyDoc(doc) {
+    state.doc = doc;
+    save();
+    applyTheme();
+    paintChips();
+    render();
+  }
+
+  /** 合并：备份里的任务按 id 去重补进来，现有的保留。设置用备份的。 */
+  function mergeDocs(cur, incoming) {
+    var base = C.normalize(cur);
+    var seen = {};
+    for (var i = 0; i < base.items.length; i++) seen[base.items[i].id] = 1;
+    var added = 0;
+    for (var j = 0; j < incoming.items.length; j++) {
+      var it = incoming.items[j];
+      if (seen[it.id]) continue;
+      seen[it.id] = 1;
+      base.items.push(it);
+      added++;
+      if (it.id > base.seq) base.seq = it.id;
+    }
+    base.settings = incoming.settings;
+    return { doc: C.normalize(base), added: added, total: base.items.length };
+  }
+
+  function bkRestore(mode) {
+    el.bkMsg.hidden = true;   /* 上一次的话先收起来，免得看到的是旧消息 */
+    var parsed = parseBackup(el.bkText.value);
+    if (!parsed.ok) { bkSay(parsed.error, true); return; }
+    var msg = '';
+    if (mode === 'replace') {
+      if (!window.confirm('完全替换？\n\n这台设备上现在的任务会被全部删掉，只用备份里的内容。')) return;
+      applyDoc(parsed.doc);
+      msg = '已用备份替换：现在有 ' + parsed.doc.items.length + ' 条任务。';
+    } else {
+      var out = mergeDocs(state.doc, parsed.doc);
+      applyDoc(out.doc);
+      msg = '已合并：新增 ' + out.added + ' 条，现在一共 ' + out.total + ' 条。';
+    }
+    if (parsed.note) msg += ' ' + parsed.note;
+    if (parsed.dropped.length) msg += ' 不认识的设置项丢掉了：' + parsed.dropped.join('、') + '。';
+    bkSay(msg, false);
+  }
+
+  function bkExport() {
+    var text = JSON.stringify(makeBackup(), null, 2);
+    el.bkText.value = text;
+    var stamp = C.ymd(nowDate());
+    try {
+      var blob = new Blob([text], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = META.appName + '-备份-' + stamp + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      bkSay('备份文件开始下载了，找个地方收好。内容也留在下面的框里了。', false);
+    } catch (e) {
+      bkSay('下载没成功，但备份内容已经填在下面的框里 —— 长按全选复制，存到备忘录里。', true);
+    }
+  }
+
+  function bkCopy() {
+    var text = el.bkText.value || JSON.stringify(makeBackup(), null, 2);
+    el.bkText.value = text;
+    var done = function () { bkSay('备份内容已复制，粘到备忘录或者「文件传输助手」里存着。', false); };
+    var fail = function () {
+      el.bkText.focus();
+      el.bkText.select();
+      bkSay('这个浏览器不让自动复制 —— 内容已经选中了，长按复制一下。', true);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fail);
+    } else {
+      fail();
+    }
+  }
+
+  function bkReadFile(file) {
+    if (file.size > 256 * 1024) { bkSay('这个文件太大了（超过 256KB），不像是一个待办备份。', true); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      el.bkText.value = String(reader.result);
+      bkSay('文件读进来了，点「合并恢复」或者「完全替换」。', false);
+    };
+    reader.onerror = function () {
+      bkSay('这个文件读不出来。换个办法：把备份内容粘贴到下面的框里。', true);
+    };
+    reader.readAsText(file);
+  }
+
+  /* ================================================================ 交互 */
+
+  function bind() {
+    /* 表头 */
+    el.btnSheet.addEventListener('click', function () { openSheet('set'); });
+    el.setClose.addEventListener('click', closeSheet);
+    el.setDone.addEventListener('click', closeSheet);
+    el.setMask.addEventListener('click', closeSheet);
+    el.edClose.addEventListener('click', closeSheet);
+    el.editMask.addEventListener('click', closeSheet);
+
+    /* 加一条 */
+    el.fab.addEventListener('click', function () { openEdit(0); });
+
+    /* 列表点击（事件委托 —— 重渲染会换掉 DOM，绑在旧节点上会失效） */
+    el.pane.addEventListener('click', function (ev) {
+      var t = ev.target;
+      var node = t.closest ? t.closest('[data-check]') : null;
+      if (node) {
+        ev.stopPropagation();
+        toggleItem(+node.getAttribute('data-check'));
+        return;
+      }
+      var hit = t.closest ? t.closest('[data-habit]') : null;
+      if (hit) {
+        ev.stopPropagation();
+        toggleItem(+hit.getAttribute('data-habit'));
+        return;
+      }
+      var open = t.closest ? t.closest('[data-open]') : null;
+      if (open) {
+        openEdit(+open.getAttribute('data-open'));
+        return;
+      }
+      var tk = t.closest ? t.closest('[data-tk]') : null;
+      if (tk) {
+        openEdit(+tk.getAttribute('data-tk'));
+        return;
+      }
+      if (t.closest && t.closest('#doneHead')) {
+        state.doneOpen = !state.doneOpen;
+        renderDone(nowDate());
+      }
+    });
+
+    /* 搜索 */
+    el.searchIn.addEventListener('input', function () {
+      state.query = el.searchIn.value.trim();
+      render();
+    });
+    el.searchX.addEventListener('click', function () {
+      el.searchIn.value = '';
+      state.query = '';
+      render();
+    });
+
+    /* 表单里的 chip */
+    el.edImp.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      form.important = c.getAttribute('data-imp') === '1';
+      paintForm();
+    });
+    el.edQuick.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      var q = c.getAttribute('data-q');
+      var now = nowDate();
+      if (q === 'none') { form.date = ''; form.time = ''; }
+      else if (q === 'today') { form.date = C.ymd(now); form.preserveTime = form.time; }
+      else if (q === 'tomorrow') { form.date = C.ymd(C.addDays(now, 1)); }
+      else if (q === 'week') { form.date = C.ymd(C.addDays(C.mondayOf(now), 6)); }
+      paintForm();
+    });
+    el.edDate.addEventListener('change', function () {
+      form.date = el.edDate.value || '';
+      if (!form.date) form.time = '';
+      paintForm();
+    });
+    el.edTime.addEventListener('change', function () {
+      form.time = el.edTime.value || '';
+      paintForm();
+    });
+    el.edRepeat.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      var k = c.getAttribute('data-rep');
+      form.repeat = k === 'none' ? null : k;
+      if (form.repeat === 'weekly' && !form.days.length) {
+        form.days = [C.isoDow(nowDate())];
+      }
+      paintForm();
+    });
+    el.edDays.addEventListener('click', function (ev) {
+      var b = ev.target.closest('.dw');
+      if (!b) return;
+      var d = +b.getAttribute('data-d');
+      var at = form.days.indexOf(d);
+      if (at >= 0) form.days.splice(at, 1);
+      else form.days.push(d);
+      form.days.sort(function (a, b2) { return a - b2; });
+      paintForm();
+    });
+    el.edSave.addEventListener('click', saveForm);
+    el.edToggle.addEventListener('click', function () {
+      if (!state.editing) return;
+      toggleItem(state.editing);
+      closeSheet();
+    });
+    el.edDel.addEventListener('click', function () {
+      if (!state.editing) return;
+      var it = C.getItem(state.doc, state.editing);
+      if (!it) return;
+      if (!window.confirm('删掉「' + it.title + '」？删了就找不回来了。')) return;
+      var next = C.removeItem(state.doc, state.editing);
+      if (next) { state.doc = next; save(); closeSheet(); render(); }
+    });
+
+    /* 设置 */
+    el.themeChips.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      setSetting({ theme: c.getAttribute('data-theme') });
+    });
+    el.viewChips.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      setSetting({ view: c.getAttribute('data-view') });
+    });
+    el.sortChips.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      setSetting({ sort: c.getAttribute('data-sort') });
+    });
+    el.urgentChips.addEventListener('click', function (ev) {
+      var c = ev.target.closest('.chip');
+      if (!c) return;
+      setSetting({ urgentDays: +c.getAttribute('data-urgent') });
+    });
+
+    /* 备份 */
+    el.bkExport.addEventListener('click', bkExport);
+    el.bkCopy.addEventListener('click', bkCopy);
+    el.bkMerge.addEventListener('click', function () { bkRestore('merge'); });
+    el.bkReplace.addEventListener('click', function () { bkRestore('replace'); });
+    el.bkPick.addEventListener('click', function () {
+      el.bkFile.value = '';
+      el.bkFile.click();
+    });
+    el.bkFile.addEventListener('change', function () {
+      if (el.bkFile.files && el.bkFile.files[0]) bkReadFile(el.bkFile.files[0]);
+    });
+
+    /* 回车即保存 */
+    el.edTitleIn.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); saveForm(); }
+    });
+
+    /* Esc 关弹层 */
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && state.sheet) closeSheet();
+    });
+  }
+
+  /* -------------------------------------------------------------- 心跳 */
+
+  var lastKey = '';
+
+  function tick() {
+    var d = nowDate();
+    var key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes();
+    if (key === lastKey) return;
+    lastKey = key;
+    render();
+  }
+
+  /* -------------------------------------------------------------- 启动 */
+
+  function boot() {
+    assertNodes();
+    probeStorage();
+    load();
+    applyTheme();
+    paintChips();
+    paintWarn();
+    render();
+    bind();
+    lastKey = '';
+    tick();
+
+    /* iOS 回前台会把定时器冻住，回来先补一次 */
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) tick();
+    });
+    window.addEventListener('resize', function () { /* 布局靠 CSS，重画一次保证"今天"是对的 */ tick(); });
+    setInterval(tick, 20000);
+  }
+
+  /**
+   * 直接启动，不等 DOMContentLoaded。
+   *
+   * 为什么：这个 script 标签是写在页面最后，执行到这一行时它上面的
+   * 节点都已经解析完了，所以"现在就跑"是安全的。而等 DOMContentLoaded 会带来
+   * 一个隐蔽的坑 —— 测试脚本 eval 完三个 js 之后立刻查 state，会看到一份
+   * 空的初始文档（因为 load() 还没跑），然后开始怀疑是 normalize 坏了。
+   * 同步启动之后，eval 一返回页面就是就绪状态。
+   */
+  var booted = false;
+  function bootOnce() {
+    if (booted) return;
+    booted = true;
+    boot();
+  }
+
+  if (document.readyState === 'loading') {
+    /* 正常打开时 body 已经解析到这一行了（这是页面最后一个 script）；
+       而 jsdom 里测试脚本是 eval 这三个 js 的，DOMContentLoaded 可能永远不会来，
+       所以两边都要照顾：先立刻启动，同时留一个"万一之后再触发"的兜底。 */
+    bootOnce();
+    document.addEventListener('DOMContentLoaded', bootOnce);
+  } else {
+    bootOnce();
+  }
+
+  /* 给测试和截图脚本用的钩子 */
+  window.__T = {
+    state: state,
+    data: D,
+    core: C,
+    render: render,
+    tick: tick,
+    save: save,
+    openEdit: openEdit,
+    openSheet: openSheet,
+    closeSheet: closeSheet,
+    setSetting: setSetting,
+    makeBackup: makeBackup,
+    parseBackup: parseBackup,
+    bkRestore: bkRestore,
+    mergeDocs: mergeDocs,
+    applyDoc: applyDoc,
+    heatHtml: heatHtml,
+    form: form,
+    setNow: function (d) {
+      state.nowOverride = d ? new Date(d) : null;
+      lastKey = '';
+      render();
+    },
+    isReady: function () { return true; }
+  };
+})();
+</script>
+</body>
+</html>
