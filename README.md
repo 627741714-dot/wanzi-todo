@@ -97,6 +97,7 @@ wanzi-todo/
 │  ├─ shots.mjs             用无头 Edge 实拍 13 张截图（CDP 强制 390px）
 │  ├─ cdp.mjs               极简 CDP 客户端（Node 自带 WebSocket，零依赖）
 │  ├─ make-icon.mjs         手写 PNG 生成图标
+│  ├─ push-via-api.mjs      github.com:443 连不上时，用 GitHub API 把改动推上去
 │  └─ serve.mjs             零依赖本地静态服务
 └─ 预览/                     实拍截图
 ```
@@ -233,6 +234,16 @@ git add -A && git commit -m "改了啥" && git push
 ```
 
 Pages 会自动重新发布（大约半分钟到几分钟）。仓库是 `627741714-dot/wanzi-todo`，Pages 源是 `master` 分支根目录。
+
+**如果 `git push` 报 `Could not connect to server`：** 这不是仓库的问题。实测这个网络环境里 **`github.com:443` 经常连不上**（`Test-NetConnection github.com -Port 443` 返回 False），但 **`api.github.com:443` 是通的**。这时用：
+
+```bat
+node tools/push-via-api.mjs --message "改了啥"
+```
+
+它走 GitHub 的 Contents/Git Data API（`api.github.com`）把改动过的文件建成 blob → tree → commit，再更新 `master` 分支 —— 效果和 push 一样。
+`node tools/push-via-api.mjs --dry` 可以先看会推哪些文件。
+另一个已知现象：`ssh github.com:22` 通但会 `Permission denied (publickey)`（本机密钥没加到账号），所以别指望走 SSH。
 
 ### 三个一定会遇到的坑
 
