@@ -14,9 +14,19 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OWNER = '627741714-dot';
 const REPO = path.basename(ROOT);
 const DRY = process.argv.includes('--dry');
+const DELETE = process.argv.includes('--delete');
 
+/* 一律走 -z（NUL 分隔）+ core.quotepath=false：
+   默认的 git 会把中文文件名写成 "\344\270\270..." 这种带引号的转义形式，
+   拿它去 fs.existsSync 永远找不到 —— 上一轮就是这样把 18 张新截图和
+   丸梓todo.html 静默漏掉的（只推了 11 个 ASCII 名字的文件）。 */
 function git(...args) {
-  return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  return execFileSync('git', ['-c', 'core.quotepath=false', ...args], { cwd: ROOT, encoding: 'utf8' });
+}
+
+/* 按 NUL 切开，过滤空串。前提是命令带了 -z。 */
+function gitZ(...args) {
+  return git(...args).split('\0').filter(Boolean);
 }
 
 function token() {
@@ -25,41 +35,93 @@ function token() {
   return execFileSync(gh, ['auth', 'token'], { encoding: 'utf8' }).trim();
 }
 
-const branch = git('rev-parse', '--abbrev-ref', 'HEAD');
-/* 有上游就比较，没有就把所有已跟踪文件都当改动 */
-let changed;
-try {
-  const upstream = git('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}');
-  changed = git('diff', '--name-only', upstream + '..HEAD').split('\n').filter(Boolean);
-} catch {
-  changed = git('ls-files').split('\n').filter(Boolean);
-}
-/* 工作区里还没提交的改动也算 */
-const dirty = git('status', '--porcelain').split('\n').filter(Boolean).map(l => l.slice(3).trim());
-const files = [...new Set([...changed, ...dirty])].filter(f => f && fs.existsSync(path.join(ROOT, f)));
-
-if (!files.length) { console.log('没有要推的文件。'); process.exit(0); }
-console.log('分支 ' + branch + '，要推 ' + files.length + ' 个文件：');
-for (const f of files) console.log('  ' + f);
-if (DRY) process.exit(0);
+const branch = git('rev-parse', '--abbrev-ref', 'HEAD').trim();
 
 const T = token();
-const api = (p, opts) => fetch('https://api.github.com' + p, {
-  ...opts,
-  headers: {
-    authorization: 'Bearer ' + T,
-    accept: 'application/vnd.github+json',
-    'user-agent': 'wanzi-push-via-api',
-    ...(opts && opts.headers)
+/* 这个网络环境里 api.github.com 也会时不时 ECONNRESET，一口气几十个请求
+   跑到一半就断。所以每个请求都带重试（4 次，0.6s / 1.2s / 2.4s 退避）。 */
+async function api(p, opts) {
+  let last;
+  for (let i = 0; i < 4; i++) {
+    try {
+      return await fetch('https://api.github.com' + p, {
+        ...opts,
+        headers: {
+          authorization: 'Bearer ' + T,
+          accept: 'application/vnd.github+json',
+          'user-agent': 'wanzi-push-via-api',
+          ...(opts && opts.headers)
+        }
+      });
+    } catch (e) {
+      last = e;
+      console.log('  （第 ' + (i + 1) + ' 次请求失败：' + (e.cause && e.cause.code ? e.cause.code : e.message) + '，等一下重来）');
+      await new Promise(r => setTimeout(r, 600 * Math.pow(2, i)));
+    }
   }
-});
+  throw last;
+}
 
-/* 先拿一次当前 HEAD 的 tree sha 作为父提交 */
+/* 先拿远端分支的当前 sha 作为父提交 */
 const ref = await api(`/repos/${OWNER}/${REPO}/git/ref/heads/${branch}`).then(r => r.json());
 if (!ref.object) { console.error('拿不到分支 ref：' + JSON.stringify(ref)); process.exit(1); }
 const parentSha = ref.object.sha;
 const parent = await api(`/repos/${OWNER}/${REPO}/git/commits/${parentSha}`).then(r => r.json());
 console.log('父提交 ' + parentSha.slice(0, 8));
+
+const GONE = [];   /* 远端还有、本地已删的文件 */
+
+/* 跟【远端那个 sha】比，而不是跟本地 origin/master —— API 推出来的提交本地根本没有，
+   本地跟踪分支会一直停在老位置，那样每次都会把全部文件重推一遍。
+   本地没这个对象，就找共同祖先来比；再不济就比"两边内容不一样的文件"。 */
+const localHead = git('rev-parse', 'HEAD').trim();
+let changed = [];
+if (parentSha === localHead) {
+  changed = [];
+} else {
+  let base = null;
+  try { git('fetch', '--no-tags', 'origin', branch); base = parentSha; } catch { /* 网络不好，正常 */ }
+  if (base) {
+    changed = gitZ('diff', '--name-only', '-z', base + '..HEAD');
+    try { git('update-ref', 'refs/remotes/origin/' + branch, base); } catch { /* 算了 */ }
+  } else {
+    /* 本地没有远端提交：把两边所有文件都拿出来，逐个比内容 sha */
+    const remoteTree = await api(`/repos/${OWNER}/${REPO}/git/trees/${parent.tree.sha}?recursive=1`).then(r => r.json());
+    const remote = new Map();
+    for (const e of (remoteTree.tree || [])) if (e.type === 'blob') remote.set(e.path, e.sha);
+    const localFiles = gitZ('ls-files', '-z');
+    for (const f of localFiles) {
+      const rel = f.split(path.sep).join('/');
+      const buf = fs.readFileSync(path.join(ROOT, f));
+      const blob = await api(`/repos/${OWNER}/${REPO}/git/blobs`, {
+        method: 'POST',
+        body: JSON.stringify({ content: buf.toString('base64'), encoding: 'base64' })
+      }).then(x => x.json());
+      if (!blob.sha) { console.error('建 blob 失败：' + f + ' → ' + JSON.stringify(blob)); process.exit(1); }
+      if (remote.get(rel) !== blob.sha) changed.push(f);
+      remote.delete(rel);
+    }
+    /* 远端有、本地已经没有的文件。默认不动它（免得手滑清空远端），
+       加 --delete 才会在这次提交里删掉。 */
+    for (const gone of remote.keys()) {
+      GONE.push(gone);
+      console.log('  （远端还有、本地已删：' + gone + '）');
+    }
+  }
+}
+/* 工作区里还没提交的改动（含未跟踪的新文件）也算。
+   用 diff --name-only 而不是 status --porcelain：后者每条前面带 "XY " 前缀，
+   而且重命名会多带一个"来源"路径，解析起来容易踩坑。 */
+const dirtyTracked = gitZ('diff', '--name-only', '-z', 'HEAD');
+const untracked = gitZ('ls-files', '--others', '--exclude-standard', '-z');
+const files = [...new Set([...changed, ...dirtyTracked, ...untracked])]
+  .filter(f => f && fs.existsSync(path.join(ROOT, f)));
+
+if (!files.length && !(DELETE && GONE.length)) { console.log('没有要推的文件。'); process.exit(0); }
+console.log('分支 ' + branch + '，要推 ' + files.length + ' 个文件：');
+for (const f of files) console.log('  ' + f);
+if (DELETE && GONE.length) console.log('并删掉远端 ' + GONE.length + ' 个已不存在的文件（--delete）');
+if (DRY) process.exit(0);
 
 /* 逐个文件建 blob */
 const entries = [];
@@ -73,6 +135,9 @@ for (const f of files) {
   entries.push({ path: f.split(path.sep).join('/'), mode: '100644', type: 'blob', sha: r.sha });
   console.log('  blob ' + r.sha.slice(0, 8) + '  ' + f);
 }
+
+/* 要删的走 sha:null（Git Data API 的删除写法） */
+if (DELETE) for (const g of GONE) entries.push({ path: g, mode: '100644', type: 'blob', sha: null });
 
 const tree = await api(`/repos/${OWNER}/${REPO}/git/trees`, {
   method: 'POST',

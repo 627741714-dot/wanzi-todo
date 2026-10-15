@@ -49,6 +49,22 @@
   <main class="pane" id="pane">
     <div id="paneInner">
 
+      <section class="sec" id="secToday">
+        <div class="tbar" id="todayBar">
+          <div class="tbar-top">
+            <span class="tbar-l" id="todayBarL">今天</span>
+            <span class="tbar-n" id="todayBarN"></span>
+          </div>
+          <div class="tbar-track"><i class="tbar-fill" id="todayBarFill"></i></div>
+          <p class="tbar-quote" id="todayQuote"></p>
+        </div>
+        <div id="today"></div>
+        <div class="settle" id="settle" hidden>
+          <span class="settle-t">今天的都清完了</span>
+          <span class="settle-s" id="settleS"></span>
+        </div>
+      </section>
+
       <section class="sec" id="secSoon" hidden>
         <h2 class="sec-h">
           <span>最近要交的</span>
@@ -219,6 +235,16 @@
     <div class="fld">
       <span class="fld-l">四象限图例</span>
       <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="fld">
+      <span class="fld-l">鼓励的话</span>
+      <p class="fld-note">勾掉一件事时弹一句。写你自己的，一行一句；留空就用自带的那些。</p>
+      <textarea class="in in-area" id="cheerIn" rows="3" placeholder="例如：&#10;又干完一件，稳&#10;别急，一件一件来"></textarea>
+      <label class="sw-row">
+        <input type="checkbox" id="celebrateIn">
+        <span>勾掉时弹一句鼓励</span>
+      </label>
     </div>
 
     <div class="fld">
