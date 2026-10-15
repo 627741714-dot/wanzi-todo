@@ -34,6 +34,9 @@ const PHONE_W = 390;                    // iPhone 14/15/16 的逻辑宽度
 const PHONE_H = 844;
 const DEBUG_PORT = 9334;
 const CHECK_ONLY = process.argv.includes('--check');
+/* 演示数据里的"今天"是固定的一天，而"哪些任务算今天到期"是应用自己按日期算的。
+   截图要表现"今天的事全清了"，就得按日期去勾 —— 所以传 check=due，由驱动脚本
+   在渲染之后现找"已经欠着的"和"今天截止"两组里的勾，而不是把任务 id 写死。 */
 
 const EDGE_CANDIDATES = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -135,7 +138,33 @@ export function driverScript() {
       var tc = document.querySelector('#themeChips .chip[data-theme="' + q.get('pickTheme') + '"]');
       if (tc) tc.click();
     }
+    /* 视图必须显式指定：演示存档（下面 SEED）里存的是 view:'quad'，
+       不指定就会照着存档画四象限 —— 而 01~04 要拍的是默认的"今天"那一屏。 */
     if (q.get('view')) T.setSetting({ view: q.get('view') });
+    if (q.get('cheers')) T.setSetting({ cheers: q.get('cheers') });
+    if (q.get('check')) {                      /* 勾掉几件（今天这一屏的进度/庆祝） */
+      var wanted = q.get('check');
+      if (wanted === 'due') {
+        /* 今天的事全清了：把"已经欠着的"和"今天截止"两组里的都勾上。
+           每勾一次都会重画 DOM，前面缓存下来的节点就作废了，所以每一轮都重新找。 */
+        for (var guard = 0; guard < 30; guard++) {
+          var open = null;
+          var groups = document.querySelectorAll('#today .tgroup');
+          for (var gi = 0; gi < groups.length && !open; gi++) {
+            var tx = groups[gi].textContent;
+            if (tx.indexOf('今天截止') < 0 && tx.indexOf('已经欠着') < 0) continue;
+            open = groups[gi].querySelector('[data-check]');
+          }
+          if (!open) break;
+          open.click();
+        }
+      } else {
+        wanted.split(',').forEach(function (id) {
+          var box = document.querySelector('#paneInner [data-check="' + id + '"]');
+          if (box) box.click();
+        });
+      }
+    }
     if (q.get('sort')) T.setSetting({ sort: q.get('sort') });
     if (q.get('urgent')) T.setSetting({ urgentDays: +q.get('urgent') });
     if (q.get('done')) {                       /* 展开"已完成"归档区 */
@@ -205,6 +234,9 @@ export function driverScript() {
         theme: window.__T.state.doc.settings.theme,
         view: window.__T.state.doc.settings.view,
         cards: document.querySelectorAll('#quads .tk').length,
+        today: document.querySelectorAll('#today .tgroup, #today .tk').length,
+        settle: !!(document.getElementById('settle') && !document.getElementById('settle').hidden),
+        cheer: document.querySelectorAll('.cheer').length,
         habits: document.querySelectorAll('#habits .habit').length,
         heat: document.querySelectorAll('#heat .heat-cell').length,
         soon: document.querySelectorAll('#soon .soon-card').length,
@@ -287,7 +319,7 @@ async function shoot(browser, cfg) {
     }
 
     const problems = [];
-    if (!shot.cards && !shot.lines && !cfg.allowEmpty) problems.push('页面里既没有四象限任务卡也没有列表行');
+    if (!shot.cards && !shot.lines && !shot.today && !cfg.allowEmpty) problems.push('页面里既没有四象限任务卡，也没有列表行或今天这一屏的内容');
     if (shot.h < 200) problems.push('整页高度只有 ' + shot.h + 'px，明显没渲染出来');
     if (shot.err && shot.err !== 'none') problems.push('页面报错：' + shot.err);
     if (shot.vw !== PHONE_W) problems.push('视口宽度是 ' + shot.vw + '，不是 ' + PHONE_W);
@@ -298,6 +330,7 @@ async function shoot(browser, cfg) {
     }
 
     const info = `${shot.items} 条存档（待办 ${shot.open} / 已完成 ${shot.done}），四象限卡 ${shot.cards}，` +
+      `今天这一屏 ${shot.today} 块 [${shot.view}]${shot.settle ? '（结算条已亮）' : ''}${shot.cheer ? '（庆祝气泡 ' + shot.cheer + ' 个）' : ''}，` +
       `打卡 ${shot.habits}，热力图 ${shot.heat} 格，整页 ${shot.fullH}px，视口 ${shot.vw}px` +
       (shot.sheetOpen ? `，抽屉 ${shot.sheetH}px` : '');
     if (CHECK_ONLY) return { name: cfg.name, ok: true, note: info };
@@ -308,7 +341,8 @@ async function shoot(browser, cfg) {
     await page.send('Emulation.setDeviceMetricsOverride', {
       width: PHONE_W, height: capH, deviceScaleFactor: 1, mobile: true
     });
-    await sleep(120);
+    /* 庆祝气泡只活 1600ms，等太久就拍不到了，所以勾过东西的那几张要快 */
+    await sleep(cfg.query.indexOf('check=') >= 0 ? 40 : 120);
     const cap = await page.send('Page.captureScreenshot', {
       format: 'png',
       captureBeyondViewport: true,
@@ -326,21 +360,27 @@ async function shoot(browser, cfg) {
 
 /* ------------------------------------------------------------------ 截哪些 */
 
-/* 用了 pickTheme 而不是直接改 data-theme：见上面 apply() 里的说明 */
+/* 用了 pickTheme 而不是直接改 data-theme：见上面 apply() 里的说明。
+   注意：01-04 故意【不】传 view —— 它们拍的就是"用户第一次打开会看到什么"（默认今天视图）。 */
 const SHOTS = [
-  { name: '01-四象限-清爽', query: 'pickTheme=clean' },
-  { name: '02-四象限-暗夜', query: 'pickTheme=night' },
-  { name: '03-四象限-纸感', query: 'pickTheme=paper' },
-  { name: '04-清单', query: 'pickTheme=clean&view=list' },
-  { name: '05-只按 DDL 排', query: 'pickTheme=clean&sort=ddl' },
-  { name: '06-搜索-实验', query: 'pickTheme=clean&search=' + encodeURIComponent('实验') },
-  { name: '07-新建一条', query: 'pickTheme=clean&prefill=' + encodeURIComponent('周五之前订好回家的票') },
-  { name: '08-改一条', query: 'pickTheme=clean&edit=2' },
-  { name: '09-设置', query: 'pickTheme=clean&sheet=set' },
-  { name: '10-设置-备份', query: 'pickTheme=clean&sheet=set&sheetBottom=1' },
-  { name: '11-已完成归档', query: 'pickTheme=clean&done=1' },
-  { name: '12-紧急界线改 7 天', query: 'pickTheme=clean&urgent=7' },
-  { name: '13-空清单', query: 'pickTheme=clean', seed: 0, allowEmpty: true }
+  { name: '01-今天-清爽', query: 'pickTheme=clean&view=focus' },
+  { name: '02-今天-勾掉一件（庆祝）', query: 'pickTheme=clean&view=focus&check=1' },
+  { name: '03-今天-收工结算', query: 'pickTheme=clean&view=focus&check=due' },
+  { name: '04-今天-暗夜', query: 'pickTheme=night&view=focus&check=1' },
+  { name: '05-四象限-清爽', query: 'pickTheme=clean&view=quad' },
+  { name: '06-四象限-暗夜', query: 'pickTheme=night&view=quad' },
+  { name: '07-四象限-纸感', query: 'pickTheme=paper&view=quad' },
+  { name: '08-清单', query: 'pickTheme=clean&view=list' },
+  { name: '09-只按 DDL 排', query: 'pickTheme=clean&view=list&sort=ddl' },
+  { name: '10-搜索-实验', query: 'pickTheme=clean&search=' + encodeURIComponent('实验') },
+  { name: '11-新建一条', query: 'pickTheme=clean&prefill=' + encodeURIComponent('周五之前订好回家的票') },
+  { name: '12-改一条', query: 'pickTheme=clean&edit=2' },
+  { name: '13-设置', query: 'pickTheme=clean&sheet=set' },
+  { name: '14-设置-鼓励的话', query: 'pickTheme=clean&sheet=set&cheers=' + encodeURIComponent('你已经比昨天往前走了一点\n不用一次做完，做一件算一件') },
+  { name: '15-设置-备份', query: 'pickTheme=clean&sheet=set&sheetBottom=1' },
+  { name: '16-已完成归档', query: 'pickTheme=clean&view=list&done=1' },
+  { name: '17-今天-紧急界线改 7 天', query: 'pickTheme=clean&view=focus&urgent=7' },
+  { name: '18-空清单', query: 'pickTheme=clean&view=focus', seed: 0, allowEmpty: true }
 ];
 
 /* -------------------------------------------------------------------- 主流程 */

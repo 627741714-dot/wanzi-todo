@@ -330,6 +330,133 @@ html[data-theme="night"] {
   text-align: center;
 }
 
+/* ============================== 今天这一屏 ============================== */
+/* 第一屏回答"我现在要碰什么"。上面一条进度，下面按"欠着的 / 今天 / 明天 /
+   这周 / 没定时间"分组 —— 比四象限更像一张待办便条。 */
+
+.tbar {
+  padding: 12px 13px 11px;
+  border-radius: 15px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.tbar-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tbar-l {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tbar-n {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.tbar-track {
+  margin-top: 9px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--card-2);
+  overflow: hidden;
+}
+
+.tbar-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--q4)));
+  /* 宽度变化走 transition —— 勾掉一件事时看着那条进度涨上去，比瞬间跳有意思 */
+  transition: width .45s cubic-bezier(.22, .68, .32, 1);
+}
+
+.tbar-quote {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.tbar-quote:empty { display: none; }
+
+/* 今天清空了才出现的结算条 */
+.settle {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 12px 13px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--good) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--good) 32%, transparent);
+}
+.settle-t { font-size: 12.5px; font-weight: 700; color: color-mix(in srgb, var(--good) 82%, var(--ink)); }
+.settle-s { font-size: 11.5px; line-height: 1.5; color: color-mix(in srgb, var(--good) 55%, var(--ink)); }
+
+/* 分组标题：比四象限的标题轻，像便条上的小标 */
+.tgroup { margin-top: 16px; }
+.tgroup-h {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 0 2px 7px;
+}
+.tgroup-t { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.tgroup-tip { font-size: 10.5px; color: var(--ink-3); }
+.tgroup-n {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+/* 勾掉时飘上来的那句话 */
+.cheer {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 60;
+  max-width: min(320px, 84vw);
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 6px) scale(.98);
+}
+.cheer.is-pop {
+  animation: cheer-pop 1.5s cubic-bezier(.22, .68, .32, 1) forwards;
+}
+@keyframes cheer-pop {
+  0%   { opacity: 0; transform: translate(-50%, 10px) scale(.96); }
+  14%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  72%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -10px) scale(1); }
+}
+/* 勾掉那一刻，勾勾自己弹一下 —— "爽感"大半来自这一下 */
+.tk-check.is-pop { animation: check-pop .42s cubic-bezier(.22, .68, .32, 1); }
+@keyframes check-pop {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cheer.is-pop, .tk-check.is-pop { animation: none; }
+  .cheer.is-pop { opacity: 1; transform: translate(-50%, 0); }
+  .tbar-fill { transition: none; }
+}
+
 /* ============================ 最近要交的 ============================ */
 
 .soon {
@@ -553,6 +680,25 @@ html[data-theme="night"] {
   font-weight: 700;
   color: var(--good);
 }
+/* 打卡行上那个「⋯」：给一条能改/能删的路（原来点哪都只是打卡） */
+.habit-more {
+  flex: 0 0 auto;
+  width: 30px; height: 30px;
+  margin-left: 1px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+.habit-more:hover,
+.habit-more:active { background: var(--card-2); color: var(--ink); }
 
 /* 小热力图 */
 .heat {
@@ -735,6 +881,18 @@ html[data-theme="night"] {
   font-size: 11.5px;
   color: var(--q1);
 }
+
+/* 设置里的开关行（勾掉时弹鼓励） */
+.sw-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.sw-row input { width: 17px; height: 17px; accent-color: var(--accent); margin: 0; }
 
 .in {
   width: 100%;

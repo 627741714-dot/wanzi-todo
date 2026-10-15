@@ -75,6 +75,32 @@ const CASES = [
     find: "    return doc.items.filter(function (it) { return isRepeat(it); });",
     replace: "    return [];",
     expect: 'two habits are listed'
+  },
+  {
+    /* 今天这一屏是默认视图，它一旦不画，用户第一眼看到的就是空白。
+       这里期望的是那串"点不到节点"的报错而不是某条断言名 —— 因为不画这一屏之后，
+       后面的点击根本走不下去，测试是在半路炸掉的。它同样是"真的红了"。 */
+    name: 'the today screen actually gets rendered',
+    file: 'app',
+    find: "    renderToday(now);",
+    replace: "    /* renderToday(now); */",
+    expect: 'cannot click missing node: #today [data-tk="1"] [data-check]'
+  },
+  {
+    /* 勾掉时不道喜，庆祝功能就是白做的 —— 这条守着"爽感"那件事 */
+    name: 'checking something off throws confetti',
+    file: 'app',
+    find: "    if (changed && checked) celebrateCheck(id);",
+    replace: "    if (false && changed && checked) celebrateCheck(id);",
+    expect: 'checking pops exactly one praise bubble'
+  },
+  {
+    /* 用户自己写的鼓励话必须优先，否则那个文本框就是个摆设 */
+    name: 'the user\'s own encouraging words are used',
+    file: 'core',
+    find: "    if (mine.length) return mine;",
+    replace: "    if (false && mine.length) return mine;",
+    expect: 'and it uses the custom line'
   }
 ];
 

@@ -314,6 +314,179 @@
   }
 
   /* ==================================================================
+     鼓励的话 & 今天这一屏（用户要的"激励感"）
+     ================================================================== */
+
+  /**
+   * 可以用哪些鼓励话。
+   * 用户在设置里写了（按行分隔）就【只用】他写的 —— 自己写的话被随机换成
+   * 系统自带的那句，比没有还烦人。没写就用 D 里自带的两池子。
+   */
+  function cheerPool(settings, kind) {
+    var raw = settings && typeof settings.cheers === 'string' ? settings.cheers : '';
+    var mine = [];
+    var lines = raw.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].replace(/\s+/g, ' ').trim();
+      if (t) mine.push(t.length > 40 ? t.slice(0, 40) : t);
+    }
+    if (mine.length) return mine;
+    if (kind === 'day') return D.CHEERS_DAY.slice();
+    if (kind === 'streak') return D.CHEERS_STREAK.slice();
+    return D.CHEERS_TASK.slice();
+  }
+
+  /**
+   * 挑一句鼓励。kind: 'task' | 'day' | 'streak'
+   * seed 传进来的话就是确定性的（测试里用，也保证同一件事不会因为重渲染换台词）；
+   * 不传就随机。
+   * {n} 会被替换成 n（连续天数用）。
+   */
+  function cheerFor(settings, kind, seed, n) {
+    var pool = cheerPool(settings, kind);
+    if (!pool.length) return '';
+    var idx;
+    if (typeof seed === 'number' && isFinite(seed)) {
+      idx = Math.abs(Math.round(seed)) % pool.length;
+    } else {
+      idx = Math.floor(Math.random() * pool.length) % pool.length;
+    }
+    var s = pool[idx];
+    return s.replace(/\{n\}/g, n === undefined || n === null ? '' : String(n));
+  }
+
+  /** 做到了 n 次时有没有值得单说一句的（里程碑），没有返回 '' */
+  function milestoneText(n) {
+    for (var i = 0; i < D.MILESTONES.length; i++) {
+      if (D.MILESTONES[i] === n) return '第 ' + n + ' 次打卡';
+    }
+    return '';
+  }
+
+  /**
+   * 今天这一屏要显示哪些任务。
+   * 和"四象限"的区别：四象限是给分析用的，这里只回答"我现在要碰什么"。
+   * 返回 [{ key, title, hint, items }]，空组会被丢掉。
+   */
+  function focusGroups(doc, now) {
+    var ref = startOfDay(now || new Date());
+    var open = openTasks(doc);
+    var over = [], today = [], tomorrow = [], later = [], someday = [];
+    var i;
+    for (i = 0; i < open.length; i++) {
+      var it = open[i];
+      if (isRepeat(it)) continue;              /* 日常在打卡区，不在这 */
+      var left = daysLeftOf(it, ref);
+      if (it.deadline && left !== null) {
+        if (left < 0) over.push(it);
+        else if (left === 0) today.push(it);
+        else if (left === 1) tomorrow.push(it);
+        else if (left <= 7) later.push(it);
+        else someday.push(it);
+      } else {
+        someday.push(it);
+      }
+    }
+    /* 组内按同一套算分排，保证顺序稳定、和别处一致 */
+    [over, today, tomorrow, later, someday].forEach(function (arr) {
+      arr.sort(comparator(doc.settings, ref));
+    });
+
+    var groups = [
+      { key: 'over', title: '已经欠着的', hint: '先处理这些', items: over },
+      { key: 'today', title: '今天截止', hint: '', items: today },
+      { key: 'tomorrow', title: '明天截止', hint: '今天能先做就做掉', items: tomorrow },
+      { key: 'later', title: '这周内', hint: '', items: later },
+      { key: 'someday', title: '没定时间的', hint: '有空再碰', items: someday }
+    ];
+    var out = [];
+    for (i = 0; i < groups.length; i++) if (groups[i].items.length) out.push(groups[i]);
+    return out;
+  }
+
+  /**
+   * 今天该碰的一共几件、还剩几件（进度条用）。
+   * 只算"有期限且到期日 <= 今天"的和今天标记要做的 —— 不算明天以后的，
+   * 否则进度条永远从 20% 开始，看着就泄气。
+   */
+  function todayProgress(doc, now) {
+    var ref = startOfDay(now || new Date());
+    var items = doc && doc.items ? doc.items : [];
+    var due = 0, left = 0, done = 0;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (isRepeat(it)) continue;
+      var leftDays = daysLeftOf(it, ref);
+      if (!it.deadline || leftDays === null || leftDays > 0) continue;
+      due++;
+      if (it.done) done++; else left++;
+    }
+    return { due: due, done: done, left: left };
+  }
+
+  /**
+   * 今天过完了吗、值不值得说一句。
+   * 返回 { n, text } —— n 是今天完成/打卡的总件数，text 是那句话（没有就 ''）。
+   */
+  function daySummary(doc, now) {
+    var ref = startOfDay(now || new Date());
+    var items = doc && doc.items ? doc.items : [];
+    var stamp = ymd(ref);
+    var doneToday = 0, checkedToday = 0, dueToday = 0, overdueLeft = 0;
+    var i;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (isRepeat(it)) {
+        if (doneOn(it, ref)) checkedToday++;
+        continue;
+      }
+      if (it.done) {
+        /* doneAt 是时间戳；同一天算今天完成的 */
+        if (it.doneAt && ymd(new Date(it.doneAt)) === stamp) doneToday++;
+        continue;
+      }
+      var leftDays = daysLeftOf(it, ref);
+      if (it.deadline && leftDays !== null) {
+        if (leftDays < 0) overdueLeft++;
+        else if (leftDays === 0) dueToday++;
+      }
+    }
+    var n = doneToday + checkedToday;
+    var text = '';
+    if (overdueLeft === 0 && dueToday === 0 && n > 0) {
+      text = cheerFor(doc && doc.settings, 'day', n);
+    }
+    return { n: n, doneToday: doneToday, checkedToday: checkedToday, dueToday: dueToday, overdueLeft: overdueLeft, text: text };
+  }
+
+  /**
+   * 连着多少天有"完成记录"（完成任务或打卡）。今天还没做就从昨天算，
+   * 不然早上一睁眼就显示 0，像被清零了。
+   */
+  function doneStreak(doc, now) {
+    var ref = startOfDay(now || new Date());
+    var items = doc && doc.items ? doc.items : [];
+    function activeOn(day) {
+      var stamp = ymd(day);
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it.log && it.log.indexOf(stamp) >= 0) return true;
+        if (it.doneAt && ymd(new Date(it.doneAt)) === stamp) return true;
+      }
+      return false;
+    }
+    var start = activeOn(ref) ? ref : addDays(ref, -1);
+    var n = 0;
+    var cursor = start;
+    for (var k = 0; k < 3650; k++) {
+      if (!activeOn(cursor)) break;
+      n++;
+      cursor = addDays(cursor, -1);
+    }
+    return n;
+  }
+
+  /* ==================================================================
      规范化（坏数据不许把页面搞崩）
      ================================================================== */
 
@@ -386,7 +559,9 @@
       view: D.DEFAULTS.view,
       sort: D.DEFAULTS.sort,
       soonDays: D.DEFAULTS.soonDays,
-      urgentDays: D.DEFAULTS.urgentDays
+      urgentDays: D.DEFAULTS.urgentDays,
+      cheers: D.DEFAULTS.cheers,
+      celebrate: D.DEFAULTS.celebrate
     };
     if (!raw || typeof raw !== 'object') return out;
     if (THEME_KEYS.indexOf(raw.theme) >= 0) out.theme = raw.theme;
@@ -396,6 +571,18 @@
     if (sd >= 1 && sd <= 60) out.soonDays = sd;
     var ud = Math.round(Number(raw.urgentDays));
     if (ud >= 0 && ud <= 30) out.urgentDays = ud;
+    /* 自己写的鼓励话：只留非空行，每行截 40 字，最多 20 行 */
+    if (typeof raw.cheers === 'string') {
+      var keep = [];
+      var lines = raw.cheers.split('\n');
+      for (var i = 0; i < lines.length && keep.length < 20; i++) {
+        var t = lines[i].replace(/\s+/g, ' ').trim();
+        if (t) keep.push(t.length > 40 ? t.slice(0, 40) : t);
+      }
+      out.cheers = keep.join('\n');
+    }
+    /* 只认真正的布尔值：'false' 这种字符串不能被当成 true */
+    if (typeof raw.celebrate === 'boolean') out.celebrate = raw.celebrate;
     return out;
   }
 
@@ -751,6 +938,11 @@
     comparator: comparator, byQuadrant: byQuadrant, flatList: flatList,
     openTasks: openTasks, doneTasks: doneTasks, habits: habits,
     overdueTasks: overdueTasks, soonTasks: soonTasks, search: search, stats: stats,
+
+    /* 鼓励 & 今天这一屏 */
+    cheerPool: cheerPool, cheerFor: cheerFor, milestoneText: milestoneText,
+    focusGroups: focusGroups, todayProgress: todayProgress,
+    daySummary: daySummary, doneStreak: doneStreak,
 
     /* 文案 */
     fmtMd: fmtMd, whenText: whenText, deadlineText: deadlineText,

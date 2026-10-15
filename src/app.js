@@ -36,6 +36,7 @@
   [
     'storageWarn', 'storageWarnText', 'hdSub', 'btnSheet', 'tick', 'tickDot', 'tickText', 'tickBars',
     'searchIn', 'searchX', 'pane', 'paneInner', 'hint', 'ftCount',
+    'secToday', 'todayBar', 'todayBarL', 'todayBarN', 'todayBarFill', 'todayQuote', 'today', 'settle', 'settleS',
     'secSoon', 'soon', 'soonN', 'secHabit', 'habits', 'habitN', 'heatWrap', 'heat',
     'secQuad', 'quads', 'secSearchResult', 'searchHits',
     'secDone', 'doneHead', 'doneN', 'doneTri', 'doneList',
@@ -45,7 +46,7 @@
     'edEveryN', 'repNote', 'edErr', 'edSave', 'edToggle', 'edDel',
     'setMask', 'set', 'setClose', 'themeChips', 'viewChips', 'sortChips', 'sortNote',
     'urgentChips', 'legend', 'bkExport', 'bkCopy', 'bkText', 'bkPick', 'bkMerge', 'bkReplace',
-    'bkFile', 'bkMsg', 'setDone'
+    'bkFile', 'bkMsg', 'cheerIn', 'celebrateIn', 'setDone'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
 
   /**
@@ -81,7 +82,9 @@
       view: state.doc.settings.view,
       sort: state.doc.settings.sort,
       urgentDays: state.doc.settings.urgentDays,
-      soonDays: state.doc.settings.soonDays
+      soonDays: state.doc.settings.soonDays,
+      cheers: state.doc.settings.cheers,
+      celebrate: state.doc.settings.celebrate
     };
   }
 
@@ -167,6 +170,7 @@
     var now = nowDate();
     renderHeader();
     renderTick(now);
+    renderToday(now);
     renderSoon(now);
     renderHabits(now);
     renderQuads(now);
@@ -174,6 +178,11 @@
     renderDone(now);
     renderFooter();
     paintSheet();
+    /* 抽屉里的 chip、鼓励话文本框、庆祝开关都跟着设置走。
+       放在 render 的最后，是因为任何一次 commit 都会走到这里 —— 以前只在
+       setSetting 里单独调，结果【从别处】改设置时（比如恢复备份、测试里直接
+       setSetting）文本框就不跟着更新，抽屉里显示的还是上一份设置。 */
+    paintChips();
   }
 
   function renderHeader() {
@@ -192,7 +201,26 @@
     var text = '';
     var cls = '';
 
-    if (overdue.length) {
+    /* 顶部那个小格条。【不能】用"完成率"来标格子：没填 DDL 的任务永远算不完，
+       格子会一直停在个位数，看着就像自己没干活。所以改成"清了多少件"——
+       清掉一件亮一格，很快就能看到回报。上限按全部任务数来（最多 20 格），
+       任务多的时候一格值好几件，数字仍然是准的。 */
+    var capTotal = st.open + st.done + st.habits;
+    var cap = capTotal > 0 ? Math.min(20, capTotal) : 0;
+    var onCells = cap ? Math.max(1, Math.round(cap * (st.done + st.checkedToday) / capTotal)) : 0;
+    var html = '';
+    for (var i = 0; i < cap; i++) html += '<i class="' + (i < onCells ? 'on' : '') + '"></i>';
+    el.tickBars.innerHTML = html;
+
+    /* 顺序有讲究：什么都没欠着的时候，先给"今天做了多少"的反馈；
+       只要还有逾期/今天到期的，就先说这件事 —— 报喜不能把欠账盖掉。 */
+    var sum = C.daySummary(state.doc, now);
+    var dayTop = C.todayProgress(state.doc, now);
+    var debt = overdue.length + dayTop.left;
+    if (debt === 0 && sum.n > 0) {
+      text = '今天该做的都清了，一共 ' + sum.n + ' 件 ✓';
+      cls = 'is-good';
+    } else if (overdue.length) {
       var worst = overdue[0];
       text = '<b>' + esc(worst.title) + '</b> 已经逾期 ' + (-C.daysLeftOf(worst, now)) + ' 天' +
         (overdue.length > 1 ? '（还有 ' + (overdue.length - 1) + ' 件逾期的）' : '');
@@ -217,14 +245,111 @@
 
     el.tick.className = 'tick' + (cls ? ' ' + cls : '');
     el.tickText.innerHTML = text;
+  }
 
-    /* 进度条：每一格是一件没做完的事，做完的格子亮起来 */
-    var total = st.open + st.done + st.habits;
-    var cells = Math.min(20, Math.max(0, total));
-    var onCells = total ? Math.round(cells * ((st.done + st.checkedToday) / total)) : 0;
+  /* ------------------------------------------------------ 今天这一屏 */
+
+  /**
+   * 第一屏：进度 + "今天要碰的"分组 + 清空后的结算条。
+   * 只有 view === 'focus' 时才占地方 —— 另外两个视图（分区/清单）是"看全局"
+   * 用的，不需要这条进度。
+   */
+  function renderToday(now) {
+    if (state.doc.settings.view !== 'focus') {
+      el.secToday.hidden = true;
+      el.today.innerHTML = '';
+      return;
+    }
+    el.secToday.hidden = false;
+
+    var pr = C.todayProgress(state.doc, now);
+    var total = pr.due;
+    var pct = total ? Math.round((pr.done / total) * 100) : 0;
+
+    el.todayBarL.textContent = '今天';
+    if (!total) {
+      el.todayBarN.textContent = '没有今天到期的';
+    } else if (pr.left === 0) {
+      el.todayBarN.textContent = total + ' / ' + total + ' ✓';
+    } else {
+      el.todayBarN.textContent = pr.done + ' / ' + total + '，还剩 ' + pr.left + ' 件';
+    }
+    el.todayBarFill.style.width = pct + '%';
+
+    /* 进度条下面那句：先把今天清空的话说出来，不然给一句鼓励 */
+    var sum = C.daySummary(state.doc, now);
+    var streak = C.doneStreak(state.doc, now);
+    var quote = '';
+    if (total && pr.left === 0) {
+      quote = '今天的到期任务全清了 ✓';
+    } else if (pr.left > 0) {
+      quote = '还有 ' + pr.left + ' 件今天要碰';
+    } else if (streak >= 2) {
+      quote = C.cheerFor(state.doc.settings, 'streak', streak, streak);
+    }
+    el.todayQuote.textContent = quote;
+
+    /* 结算条：今天该做的都清了、而且今天确实做了点什么，才亮 */
+    var settled = total > 0 && pr.left === 0 && sum.n > 0;
+    el.settle.hidden = !settled;
+    if (settled) {
+      el.settleS.textContent = '今天完成了 ' + sum.n + ' 件' +
+        (streak >= 2 ? ' · 连着 ' + streak + ' 天没断' : '') +
+        (sum.text ? '。' + sum.text : '');
+    }
+
+    var groups = C.focusGroups(state.doc, now);
+    if (!groups.length) {
+      el.today.innerHTML = '<div class="empty"><b>今天没有非做不可的事</b>想加一件就点右下角的 ＋</div>';
+      return;
+    }
     var html = '';
-    for (var i = 0; i < cells; i++) html += '<i class="' + (i < onCells ? 'on' : '') + '"></i>';
-    el.tickBars.innerHTML = html;
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i];
+      html += '<div class="tgroup">' +
+        '<h3 class="tgroup-h">' +
+        '<span class="tgroup-t">' + esc(g.title) + '</span>' +
+        (g.hint ? '<span class="tgroup-tip">' + esc(g.hint) + '</span>' : '') +
+        '<span class="tgroup-n">' + g.items.length + '</span>' +
+        '</h3>';
+      for (var j = 0; j < g.items.length; j++) html += taskHtml(g.items[j], now);
+      html += '</div>';
+    }
+    el.today.innerHTML = html;
+  }
+
+  /**
+   * 勾掉一件事时的"爽感"：勾勾弹一下 + 飘上来一句鼓励。
+   * 不管当前在哪个视图都弹（分区/清单里勾掉也是同一件事）。
+   */
+  function celebrateCheck(id) {
+    if (!state.doc.settings.celebrate) return;
+    var btn = el.pane.querySelector('[data-check="' + id + '"]');
+    if (btn) {
+      btn.classList.remove('is-pop');
+      /* 强制重排一次，否则连续勾两件时第二次不会重新播动画 */
+      void btn.offsetWidth;
+      btn.classList.add('is-pop');
+    }
+    cheerPop(C.cheerFor(state.doc.settings, 'task', id, 0));
+  }
+
+  function cheerPop(text) {
+    if (!text) return;
+    /* 一次只留一条：连勾两件时，旧那句还挂在页面上会让"飘一句"变成"叠两句" */
+    var old = document.querySelectorAll('.cheer');
+    for (var k = 0; k < old.length; k++) {
+      if (old[k].parentNode) old[k].parentNode.removeChild(old[k]);
+    }
+    var node = document.createElement('div');
+    node.className = 'cheer';
+    node.textContent = text;
+    document.body.appendChild(node);
+    void node.offsetWidth;
+    node.classList.add('is-pop');
+    window.setTimeout(function () {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }, 1600);
   }
 
   /* ------------------------------------------------------ 最近要交的 */
@@ -287,6 +412,8 @@
         (streak >= 2 ? '<span>连着 ' + streak + ' 次了</span>' : '') +
         '</div></div>' +
         '<div class="habit-streak"><b>' + streak + '</b>连续</div>' +
+        /* 打卡行原来点哪儿都是打卡，改不了也删不掉 —— 给一个明确的入口 */
+        '<button class="habit-more" type="button" data-habit-edit="' + h.id + '" aria-label="改这条日常" title="改这条日常">⋯</button>' +
         '</div>';
     }
     el.habits.innerHTML = html;
@@ -316,6 +443,13 @@
   /* --------------------------------------------------------- 四象限 */
 
   function renderQuads(now) {
+    /* 今天视图下四象限不在这屏上：那一屏只回答"现在碰什么"，
+       把 4 个象限一起堆上来又会变回分析工具。 */
+    if (state.doc.settings.view === 'focus') {
+      el.secQuad.hidden = true;
+      el.quads.innerHTML = '';
+      return;
+    }
     if (state.doc.settings.view === 'list') { renderFlat(now); return; }
     var groups = C.byQuadrant(state.doc, now);
     var html = '';
@@ -493,12 +627,23 @@
     if (!out) return false;
     state.doc = out;
     save();
+    /* 任何改动都过一遍 applyTheme：设置里的主题、以及备份恢复带进来的主题，
+       都可能在这一步变掉。放在这儿就不用每个调用点自己记得调。 */
+    applyTheme();
     render();
     return true;
   }
 
   function toggleItem(id) {
-    commit(function () { return (C.toggle(state.doc, id, nowDate()) || {}).doc || null; });
+    var checked = false;
+    var changed = commit(function () {
+      var out = C.toggle(state.doc, id, nowDate());
+      if (!out) return null;
+      checked = !!out.checked;
+      return out.doc;
+    });
+    /* 只有"勾上了"才道喜：取消勾选、或者点已完成的再取消，都不该夸 */
+    if (changed && checked) celebrateCheck(id);
   }
 
   /* ================================================================ 弹层 */
@@ -701,6 +846,27 @@
     el.legend.innerHTML = D.QUADRANTS.map(function (q) {
       return '<div class="lg ' + q.key + '"><i></i><span>' + q.no + ' ' + esc(q.title) + '</span><span class="lg-help">' + esc(q.advice) + '</span></div>';
     }).join('');
+    /* 自己写的鼓励话 + 庆祝开关。注意：这里【不要】在用户正在输入时覆盖 textarea
+       —— 光标会跳到最后。只在还没聚焦的时候同步。 */
+    if (document.activeElement !== el.cheerIn) el.cheerIn.value = s.cheers || '';
+    el.celebrateIn.checked = s.celebrate !== false;
+  }
+
+  /**
+   * 改设置。走 normalizeSettings 过一遍，所以坏值（比如 cheers 传了数字）
+   * 会退回默认，而不是塞进 doc 里等着别处炸。
+   */
+  function setSetting(patch) {
+    var merged = {};
+    var s = state.doc.settings;
+    for (var k in s) if (Object.prototype.hasOwnProperty.call(s, k)) merged[k] = s[k];
+    for (var k2 in patch) if (Object.prototype.hasOwnProperty.call(patch, k2)) merged[k2] = patch[k2];
+    commit(function () { return withSettings(state.doc, merged); });
+  }
+
+  /** 原文档 + 新设置（过一遍 normalize）→ 新文档 */
+  function withSettings(doc, rawSettings) {
+    return C.normalize({ version: 1, seq: doc.seq, items: doc.items, settings: rawSettings });
   }
 
   function applyTheme() {
@@ -714,15 +880,6 @@
     if (key === 'paper') return '#fbf6ee';
     if (key === 'night') return '#101218';
     return '#f6f7fb';
-  }
-
-  function setSetting(patch) {
-    var s = state.doc.settings;
-    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) s[k] = patch[k];
-    save();
-    applyTheme();
-    paintChips();
-    render();
   }
 
   /* ================================================================ 备份 */
@@ -901,6 +1058,13 @@
         toggleItem(+node.getAttribute('data-check'));
         return;
       }
+      /* 打卡行上的「⋯」要排在整行 data-habit 之前判，否则点它只会打卡 */
+      var more = t.closest ? t.closest('[data-habit-edit]') : null;
+      if (more) {
+        ev.stopPropagation();
+        openEdit(+more.getAttribute('data-habit-edit'));
+        return;
+      }
       var hit = t.closest ? t.closest('[data-habit]') : null;
       if (hit) {
         ev.stopPropagation();
@@ -1018,6 +1182,19 @@
       setSetting({ urgentDays: +c.getAttribute('data-urgent') });
     });
 
+    /* 自己写的鼓励话：在 change（离开输入框或回车）时存。
+       这里【不】走 setSetting —— 那会 render() 一整屏，虽然文字不丢但没必要；
+       鼓励话只影响下次弹什么，页面上没有它的位置。 */
+    el.cheerIn.addEventListener('change', function () {
+      var next = withSettings(state.doc, Object.assign({}, state.doc.settings, { cheers: el.cheerIn.value }));
+      state.doc = next;
+      save();
+      paintChips();
+    });
+    el.celebrateIn.addEventListener('change', function () {
+      setSetting({ celebrate: !!el.celebrateIn.checked });
+    });
+
     /* 备份 */
     el.bkExport.addEventListener('click', bkExport);
     el.bkCopy.addEventListener('click', bkCopy);
@@ -1061,9 +1238,8 @@
     probeStorage();
     load();
     applyTheme();
-    paintChips();
     paintWarn();
-    render();
+    render();          /* 里面会 paintChips */
     bind();
     lastKey = '';
     tick();
@@ -1114,6 +1290,8 @@
     openSheet: openSheet,
     closeSheet: closeSheet,
     setSetting: setSetting,
+    celebrateCheck: celebrateCheck,
+    cheerPop: cheerPop,
     makeBackup: makeBackup,
     parseBackup: parseBackup,
     bkRestore: bkRestore,

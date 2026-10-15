@@ -80,7 +80,12 @@ eq('the urgency line defaults to 3 days', D.URGENT_DAYS, 3);
 eq('the "due soon" block defaults to 7 days', D.SOON_DAYS, 7);
 eq('three themes offered', D.THEMES.length, 3);
 eq('the default theme is the clean one', D.DEFAULTS.theme, 'clean');
-eq('the default view is by quadrant', D.DEFAULTS.view, 'quad');
+eq('the default view is today (focus), not the quadrant board', D.DEFAULTS.view, 'focus');
+eq('the first view offered is today', D.VIEWS[0].key, 'focus');
+ok('praise lines ship for single tasks / a clear day / streaks', D.CHEERS_TASK.length >= 5 && D.CHEERS_DAY.length >= 4 && D.CHEERS_STREAK.length >= 2);
+ok('the streak praise lines take an {n}', D.CHEERS_STREAK.some((s) => s.indexOf('{n}') >= 0));
+eq('celebrating a check is on by default', D.DEFAULTS.celebrate, true);
+eq('no custom praise lines by default', D.DEFAULTS.cheers, '');
 eq('the default sort is the auto score', D.DEFAULTS.sort, 'auto');
 ok('repeat kinds include daily/weekly/every', ['daily', 'weekly', 'every'].every((k) => D.REPEAT_KINDS.some((r) => r.key === k)));
 eq('EMPTY starts with an empty list', D.EMPTY.items, []);
@@ -438,7 +443,12 @@ eq('normalize repairs a missing createdAt', C.normalize({ items: [{ id: 1, title
 eq('normalize caps the item count', C.normalize({ items: new Array(3000).fill(0).map((_, i) => ({ id: i + 1, title: 't' + i })) }).items.length, C.MAX_ITEMS);
 
 eq('an unknown theme falls back to clean', C.normalizeSettings({ theme: 'neon' }).theme, 'clean');
-eq('an unknown view falls back to quad', C.normalizeSettings({ view: 'grid' }).view, 'quad');
+eq('an unknown view falls back to today (focus)', C.normalizeSettings({ view: 'grid' }).view, 'focus');
+eq('custom praise lines are trimmed and kept line by line', C.normalizeSettings({ cheers: '  加油  \n\n 别急 \n' }).cheers, '加油\n别急');
+eq('custom praise lines are capped at 20', C.normalizeSettings({ cheers: new Array(30).fill('x').join('\n') }).cheers.split('\n').length, 20);
+eq('a praise line longer than 40 chars is cut', C.normalizeSettings({ cheers: 'y'.repeat(60) }).cheers.length, 40);
+eq('celebrate only accepts a real boolean', C.normalizeSettings({ celebrate: 'false' }).celebrate, true);
+eq('celebrate=false is honoured', C.normalizeSettings({ celebrate: false }).celebrate, false);
 eq('an unknown sort falls back to auto', C.normalizeSettings({ sort: 'random' }).sort, 'auto');
 eq('a huge soonDays is rejected', C.normalizeSettings({ soonDays: 9999 }).soonDays, D.DEFAULTS.soonDays);
 eq('a negative urgentDays is rejected', C.normalizeSettings({ urgentDays: -1 }).urgentDays, D.DEFAULTS.urgentDays);

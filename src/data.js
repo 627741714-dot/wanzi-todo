@@ -96,28 +96,70 @@
     { key: 'night', name: '暗夜', note: '深色，晚上看不刺眼' }
   ];
 
-  /* 分区视图：按四象限分开。清单视图：全部按分数排成一条。 */
+  /* 分区视图：按四象限分开。清单视图：全部按分数排成一条。
+     今天视图（focus，默认）：只有"今天要碰的"，四象限退到后台只用来排序 ——
+     这也是用户反馈"四象限太像分析工具、不像待办"之后加的第一屏。 */
   var VIEWS = [
+    { key: 'focus', name: '今天', note: '只有今天要碰的，像一张手写便条' },
     { key: 'quad', name: '分区', note: '按四象限分开，一眼看出该先碰哪件' },
     { key: 'list', name: '清单', note: '全部按急迫程度排成一条' }
   ];
+
+  /* ---------------------------------------------------------------- 鼓励 */
+  /* 勾掉一件事、或者把今天清空的时候弹出来的一句话。
+     池子分开是为了"别在清空时还夸单件事"，两个时刻的心情不一样。
+     用户可以在设置里写自己的话（写了自己的就只用自己写的）。 */
+  var CHEERS_TASK = [
+    '干得好，又少一件',
+    '搞定一件 ✓',
+    '这一下很干脆',
+    '推进了一格',
+    '记下了，继续',
+    '漂亮，下一件',
+    '这件不再压着你了',
+    '做完了就是做完了'
+  ];
+
+  var CHEERS_DAY = [
+    '今天清空了，收工 ✓',
+    '一件不剩，去玩吧',
+    '今天的你已经够好了',
+    '全清零，给自己鼓个掌',
+    '今天的单子划完了 ✓',
+    '没有欠账的一天'
+  ];
+
+  var CHEERS_STREAK = [
+    '连着 {n} 天没断 ✓',
+    '第 {n} 天了，稳住',
+    '{n} 天连续，这已经不是运气'
+  ];
+
+  /* 值得单独说一句的次数 */
+  var MILESTONES = [10, 25, 50, 100, 200, 365, 500, 1000];
+
+  /* 首页"最近要交的"区块：剩余天数 <= 这个值就顶上首页。 */
+  var SOON_DAYS = 7;
+
+  var DEFAULT_SETTINGS = {
+    theme: 'clean',
+    view: 'focus',
+    sort: 'auto',
+    soonDays: SOON_DAYS,
+    urgentDays: URGENT_DAYS,
+    /* 用户自己写的鼓励话（换行分隔）。空 = 用上面那些自带的。 */
+    cheers: '',
+    /* 勾掉时要不要弹那句庆祝（有人觉得烦） */
+    celebrate: true
+  };
+
+  var DEFAULTS = DEFAULT_SETTINGS;
 
   var SORTS = [
     { key: 'auto', name: '自动算分', note: '按 DDL 倒计时算急迫度，重要的稍加分' },
     { key: 'ddl', name: '只看 DDL', note: '严格按截止时间先后，不看重要性' },
     { key: 'created', name: '按添加时间', note: '新加的排在上面' }
   ];
-
-  /* 首页"最近要交的"区块：剩余天数 <= 这个值就顶上首页。 */
-  var SOON_DAYS = 7;
-
-  var DEFAULTS = {
-    theme: 'clean',
-    view: 'quad',
-    sort: 'auto',
-    soonDays: SOON_DAYS,
-    urgentDays: URGENT_DAYS
-  };
 
   /* 空文档。每次读写都过一遍 normalize，坏数据不会把页面搞崩。 */
   var EMPTY = {
@@ -137,6 +179,10 @@
     SORTS: SORTS,
     URGENT_DAYS: URGENT_DAYS,
     SOON_DAYS: SOON_DAYS,
+    CHEERS_TASK: CHEERS_TASK,
+    CHEERS_DAY: CHEERS_DAY,
+    CHEERS_STREAK: CHEERS_STREAK,
+    MILESTONES: MILESTONES,
     DEFAULTS: DEFAULTS,
     EMPTY: EMPTY
   };

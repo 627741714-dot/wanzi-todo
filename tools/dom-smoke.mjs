@@ -100,7 +100,9 @@ function seedDoc() {
     { id: 5, title: '交社团报名表', note: '', important: false, deadline: { date: '2026-10-12', time: '' }, createdAt: t(5), updatedAt: t(5) },                      // Q3 urgent
     { id: 6, title: '背单词', note: '', important: false, repeat: { kind: 'daily' }, log: ['2026-10-08', '2026-10-09', '2026-10-10'], createdAt: t(6), updatedAt: t(6) }, // habit, checked today
     { id: 7, title: '跑步', note: '', important: false, repeat: { kind: 'weekly', days: [1, 3, 5] }, log: ['2026-10-05', '2026-10-07', '2026-10-09'], createdAt: t(7), updatedAt: t(7) }, // habit, not due Saturday
-    { id: 8, title: '给自行车打气', note: '', important: false, deadline: { date: '2026-10-01', time: '' }, done: true, doneAt: t(8), createdAt: t(8), updatedAt: t(8) } // done
+    /* doneAt 是"完成当时"的时间戳。必须写成 NOW —— 写成 8 的话（1970 年）
+       就变成"很多年前完成的"，今天一件都没做过，跟真实使用不一样。 */
+    { id: 8, title: '给自行车打气', note: '', important: false, deadline: { date: '2026-10-01', time: '' }, done: true, doneAt: NOW.getTime(), createdAt: t(8), updatedAt: t(8) } // done today
   ];
   const doc = C.normalize({ version: 1, seq: 8, items: items, settings: { theme: 'clean', view: 'quad', sort: 'auto', urgentDays: 3, soonDays: 7 } });
   return { doc: doc, json: JSON.stringify({ version: 1, seq: doc.seq, items: doc.items, settings: doc.settings }) };
@@ -199,15 +201,26 @@ head('1. It boots');
   includes('the header shows the app name', p.txt('h1'), '丸梓todo');
   eq('an empty store starts with no tasks', p.T().state.doc.items.length, 0);
   eq('the default theme is clean', p.doc.documentElement.getAttribute('data-theme'), 'clean');
-  eq('the default view is quad', p.T().state.doc.settings.view, 'quad');
+  eq('the default view is today (focus)', p.T().state.doc.settings.view, 'focus');
+  eq('and today is the one showing', p.$('#secToday').hidden, false);
+  eq('the quadrant board is not drawn while today is up', p.$('#secQuad').hidden, true);
   eq('the storage warning is hidden when storage works', p.$('#storageWarn').hidden, true);
   eq('the add sheet starts closed', p.$('#edit').hidden, true);
   eq('the settings sheet starts closed', p.$('#set').hidden, true);
   includes('an empty app says so nicely', p.allText(), '一条待办都没有');
   eq('the footer counts zero', p.txt('#ftCount'), '0 条');
-  eq('four quadrants are rendered', p.n('.quad'), 4);
   eq('a fresh app has no habit section', p.$('#secHabit').hidden, true);
   eq('a fresh app has no done section', p.$('#secDone').hidden, true);
+  /* the today screen shows its own empty note instead of the quadrant board */
+  includes('an empty today screen says there is nothing due', p.allText(), '今天没有非做不可的事');
+}
+
+/* ... and the quadrant board is still there when you ask for it */
+{
+  const p = makePage();
+  p.T().setSetting({ view: 'quad' });
+  eq('four quadrants are rendered when the board is asked for', p.n('.quad'), 4);
+  eq('and the today screen steps aside', p.$('#secToday').hidden, true);
 }
 
 /* ================================================================== 2 */
@@ -340,6 +353,23 @@ head('6. Habits: check in, streak, heatmap');
   p.click('#habits [data-habit="6"]');
   eq('clicking again re-checks it', p.window.TodoCore.getItem(p.T().state.doc, 6).log.indexOf('2026-10-10') >= 0, true);
 
+  /* --- a habit must be editable and deletable ---------------------------------
+     This was a real bug: the whole habit row carried data-habit, so clicking
+     anywhere (including the title) only ever toggled the check-in. There was no
+     way to rename or delete a habit at all. */
+  eq('a habit row offers an edit affordance', p.n('#habits [data-habit-edit="6"]'), 1);
+  p.click('#habits [data-habit-edit="6"]');
+  eq('clicking it opens the edit sheet', p.$('#edit').hidden, false);
+  eq('the sheet is in edit mode for that habit', p.T().state.editing, 6);
+  eq('the sheet carries the habit title', p.$('#edTitleIn').value, '背单词');
+  const logBefore = p.window.TodoCore.getItem(p.T().state.doc, 6).log.length;
+  p.$('#edTitleIn').value = '背 50 个单词';
+  p.click('#edSave');
+  eq('the habit was renamed', p.window.TodoCore.getItem(p.T().state.doc, 6).title, '背 50 个单词');
+  eq('renaming a habit keeps its check-in history', p.window.TodoCore.getItem(p.T().state.doc, 6).log.length, logBefore);
+  includes('the renamed habit shows in the list', p.txt('#habits'), '背 50 个单词');
+  eq('the habit still shows as checked today', p.cls('.habit[data-habit="6"]').indexOf('is-on') >= 0, true);
+
   /* a habit not due today can still be checked (you did it anyway) */
   p.click('#habits [data-habit="7"]');
   eq('checking a not-due habit records today too', p.window.TodoCore.getItem(p.T().state.doc, 7).log.indexOf('2026-10-10') >= 0, true);
@@ -353,8 +383,23 @@ head('6. Habits: check in, streak, heatmap');
   eq('the last heatmap cell is the Sunday of this week', p.at('#heat .heat-cell', 139).getAttribute('title'), '2026-10-11');
 
   /* the habit must not appear in the quadrant list */
-  eq('habits are not in the quadrant lists', p.allText().split('背单词').length - 1 >= 1, true);
   eq('a habit is not a .tk row', p.n('#quads [data-tk="6"]'), 0);
+  eq('the habit is not in the done archive either', p.n('#doneList [data-tk="6"]'), 0);
+
+  /* deleting a habit (deletion asks first, like a normal task) */
+  p.click('#habits [data-habit-edit="6"]');
+  eq('the habit sheet offers a delete button', p.$('#edDel').hidden, false);
+  const realConfirm = p.window.confirm;
+  p.window.confirm = () => false;
+  p.click('#edDel');
+  eq('cancelling keeps the habit', p.window.TodoCore.getItem(p.T().state.doc, 6) !== null, true);
+  p.window.confirm = () => true;
+  p.click('#edDel');
+  p.window.confirm = realConfirm;
+  eq('the habit is gone', p.window.TodoCore.getItem(p.T().state.doc, 6), null);
+  eq('the deleted habit has no row left', p.n('#habits [data-habit="6"]'), 0);
+  eq('one habit row is left', p.n('#habits .habit'), 1);
+  includes('the habit list shows the remaining habit', p.txt('#habits'), '跑步');
   }
 }
 
@@ -535,11 +580,11 @@ head('11. The warning line and stats');
   includes('and says how late it is', t, '逾期 2 天');
   ok('the ticker is in alert state', p.cls('#tick').indexOf('is-alert') >= 0, p.cls('#tick'));
 
-  /* finish the overdue one -> the ticker moves on to the next deadline */
+  /* finish the overdue one -> with nothing owed any more, the ticker turns to
+     praise for the day (and the todo list really is clear for today) */
   p.click('#quads [data-check="1"]');
   const t2 = p.txt('#tickText');
-  includes('after finishing it, the ticker talks about the next deadline', t2, '最近要交');
-  includes('which is the today one', t2, '买洗衣液');
+  ok('after finishing it, the ticker stops shouting about the overdue one', t2.indexOf('已经逾期') < 0, t2);
 
   /* a clean store is cheerful */
   const p2 = makePage();
@@ -556,7 +601,7 @@ head('12. Settings');
   p.click('#btnSheet');
   eq('the settings sheet opens', p.$('#set').hidden, false);
   eq('three theme chips', p.n('#themeChips .chip'), 3);
-  eq('two view chips', p.n('#viewChips .chip'), 2);
+  eq('two view chips', p.n('#viewChips .chip'), 3);
   eq('three sort chips', p.n('#sortChips .chip'), 3);
   eq('five urgency lines offered', p.n('#urgentChips .chip'), 5);
   eq('four legend rows', p.n('#legend .lg'), 4);
@@ -632,7 +677,7 @@ head('14. Broken settings fall back, nothing crashes');
   const p = makePage({ seed: junk });
   p.setNow(NOW);
   eq('the junk theme fell back to clean', p.doc.documentElement.getAttribute('data-theme'), 'clean');
-  eq('the junk view fell back to quad', p.T().state.doc.settings.view, 'quad');
+  eq('the junk view fell back to today (focus)', p.T().state.doc.settings.view, 'focus');
   eq('the junk sort fell back to auto', p.T().state.doc.settings.sort, 'auto');
   eq('the junk urgency line fell back to 3', p.T().state.doc.settings.urgentDays, 3);
   eq('only the good item survived', p.T().state.doc.items.length, 1);
@@ -810,6 +855,87 @@ head('19. The page carries the iOS home-screen bits');
   ok('the language is zh-CN', /<html lang="zh-CN"/.test(HTML));
   ok('there is no CDN reference', !/https?:\/\/(cdn|unpkg|jsdelivr)/.test(HTML));
   ok('the three scripts are loaded in order', HTML.indexOf('src/data.js') < HTML.indexOf('src/todo-core.js') && HTML.indexOf('src/todo-core.js') < HTML.indexOf('src/app.js'));
+}
+
+/* ================================================================== 20 */
+
+head('20. The today screen (progress, praise, settling up)');
+
+{
+  /* today = 2026-10-10; the seed owes one overdue (10/8) and one due today (10/10).
+     The seeded settings ask for the quadrant board, so switch to today first. */
+  const p = openWithSeed();
+  p.setNow(NOW);
+  p.T().setSetting({ view: 'focus' });
+
+  eq('the today screen is up', p.$('#secToday').hidden, false);
+  eq('and the quadrant board is out of the way', p.$('#secQuad').hidden, true);
+  includes('the progress bar counts what is owed', p.txt('#todayBarN'), '还剩');
+  ok('the bar has a width set', /%$/.test(p.$('#todayBarFill').style.width), p.$('#todayBarFill').style.width);
+  includes('the overdue group is named', p.txt('#today .tgroup-h'), '已经欠着的');
+  includes('and the today group as well', p.allText(), '今天截止');
+  notIncludes('no "tomorrow" group when nothing is due tomorrow', p.allText(), '明天截止');
+  includes('the overdue task is listed there', p.allText(), '写 C 语言实验报告');
+  eq('no quadrant headers on the today screen', p.n('#today .quad'), 0);
+  ok('while something is owed there is no settling-up note', p.$('#settle').hidden, true);
+
+  /* finish the overdue one, then the one due today -> the day is settling up.
+     Use data-tk + a nested check button: a task that disappears from this
+     screen takes its check button with it, so never rely on the bare id. */
+  p.click('#today [data-tk="1"] [data-check]');
+  ok('finishing one moves the bar', /%$/.test(p.$('#todayBarFill').style.width), p.$('#todayBarFill').style.width);
+  p.click('#today [data-tk="2"] [data-check]');
+  eq('nothing left to do today, so the settling-up note appears', p.$('#settle').hidden, false);
+  includes('and it says how many were done', p.txt('#settleS'), '今天完成了');
+  eq('the bar is full', p.$('#todayBarFill').style.width, '100%');
+  includes('the progress line says it is clear', p.txt('#todayQuote'), '全清了');
+
+  /* the praise popup shows up on checking something, and remembers custom lines.
+     A finished task leaves this screen, so pick whatever is still open now. */
+  const boxId = p.$('#today [data-tk]:not(.is-done) [data-check]').getAttribute('data-check');
+  p.T().setSetting({ cheers: '自定义的一句' });
+  p.click('#today [data-tk="' + boxId + '"] [data-check]');   /* check it */
+  eq('checking pops exactly one praise bubble', p.n('.cheer'), 1);
+  eq('and it uses the custom line', p.txt('.cheer'), '自定义的一句');
+
+  /* unchecking is not an achievement, so it must stay quiet */
+  const p1b = openWithSeed();
+  p1b.setNow(NOW);
+  p1b.T().setSetting({ view: 'focus' });
+  p1b.T().setSetting({ cheers: '自定义的一句' });
+  p1b.click('#today [data-tk="1"] [data-check]');   /* finish the overdue one */
+  eq('praise pops once for that one', p1b.n('.cheer'), 1);
+  p1b.click('#doneHead');                            /* the archive starts folded */
+  p1b.click('#doneList [data-tk="1"] [data-check]'); /* undo it from the archive */
+  eq('undoing it pops nothing extra', p1b.n('.cheer'), 1);
+
+  /* turning the popup off keeps it quiet */
+  const p2 = openWithSeed();
+  p2.setNow(NOW);
+  p2.T().setSetting({ view: 'focus' });
+  p2.T().setSetting({ celebrate: false });
+  p2.click('#today [data-check="2"]');
+  eq('with celebrating off, nothing pops', p2.n('.cheer'), 0);
+  eq('and the setting stuck', p2.T().state.doc.settings.celebrate, false);
+
+  /* the settings sheet carries the custom-praise box and the switch */
+  const p3 = openWithSeed();
+  p3.click('#btnSheet');
+  eq('the praise box is there', !!p3.$('#cheerIn'), true);
+  eq('the celebrate switch is on by default', p3.$('#celebrateIn').checked, true);
+  p3.change('#cheerIn', '第一句\n第二句');
+  eq('custom lines are stored', p3.T().state.doc.settings.cheers, '第一句\n第二句');
+  p3.click('#celebrateIn');
+  eq('unchecking the switch stores false', p3.T().state.doc.settings.celebrate, false);
+  eq('and it survives a reload', JSON.parse(p3.window.localStorage.getItem('wanziTodo.v1')).settings.celebrate, false);
+
+  /* the box must show whatever the settings actually are —— even when the change
+     came from somewhere other than typing in the box (a restored backup, say).
+     This is a real bug that shipped once: the box was only repainted by the chip
+     handler, so a change made anywhere else left the drawer showing stale text. */
+  p3.T().setSetting({ cheers: '换了一句', celebrate: true });
+  eq('the box follows the settings when changed elsewhere', p3.$('#cheerIn').value, '换了一句');
+  eq('and so does the switch', p3.$('#celebrateIn').checked, true);
 }
 
 /* ==================================================================== */
