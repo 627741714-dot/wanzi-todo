@@ -254,19 +254,18 @@ node tools/reverse-check.mjs
 ```bat
 node tools/build-single.mjs   :: 一定先打包，否则推上去的还是旧的 index.html
 node tools/check-dist.mjs     :: 确认产物没问题
-git add -A && git commit -m "改了啥" && git push
-```
-
-Pages 会自动重新发布（大约半分钟到几分钟）。仓库是 `627741714-dot/wanzi-todo`，Pages 源是 `master` 分支根目录。
-
-**如果 `git push` 报 `Could not connect to server`：** 这不是仓库的问题。实测这个网络环境里 **`github.com:443` 经常连不上**（`Test-NetConnection github.com -Port 443` 返回 False），但 **`api.github.com:443` 是通的**。这时用：
-
-```bat
 node tools/push-via-api.mjs --message "改了啥"
 ```
 
-它走 GitHub 的 Contents/Git Data API（`api.github.com`）把改动过的文件建成 blob → tree → commit，再更新 `master` 分支 —— 效果和 push 一样。
-`node tools/push-via-api.mjs --dry` 可以先看会推哪些文件。
+Pages 会自动重新发布（大约半分钟到几分钟）。仓库是 `627741714-dot/wanzi-todo`，Pages 源是 `master` 分支根目录，线上地址 <https://627741714-dot.github.io/wanzi-todo/>。
+
+`push-via-api.mjs` 走 GitHub 的 Git Data API（`api.github.com`）把改动过的文件建成 blob → tree → commit，再更新 `master` 分支 —— 效果和 `git push` 一样（这个网络里 `github.com:443` 经常连不上，见下）。
+- `--dry` 只看会推哪些文件。
+- `--delete` 顺手删掉远端已经不该有的文件（默认不动它们，免得手滑清空远端）。
+- 它跟**远端当前 sha**比，不是跟本地 `origin/master` 比：API 推出来的提交本地根本没有，本地跟踪分支会一直停在老位置，拿它当基准每次都会重推一遍全部文件。
+- **中文文件名注意**：`git` 默认把中文路径写成 `"\344\270\270..."` 这种转义形式，拿它去 `fs.existsSync` 永远找不到 —— 早期这工具就是这样把 18 张截图和 `丸梓todo.html` **静默漏掉**的（不报错，只说"推了 11 个文件"）。所以脚本里一律 `-c core.quotepath=false` + `-z`（NUL 分隔）读 git 输出。改这个工具时别把这层去掉。
+- 这个网络里 `api.github.com` 也会时不时 `ECONNRESET`，所以每个请求都带 4 次指数退避重试。
+
 另一个已知现象：`ssh github.com:22` 通但会 `Permission denied (publickey)`（本机密钥没加到账号），所以别指望走 SSH。
 
 ### 三个一定会遇到的坑
