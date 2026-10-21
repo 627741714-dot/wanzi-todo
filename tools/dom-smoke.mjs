@@ -93,19 +93,30 @@ function seedDoc() {
   const C = require(path.join(ROOT, 'src', 'todo-core.js'));
   const t = (ms) => ms;
   const items = [
-    { id: 1, title: '写 C 语言实验报告', note: '实验三，控制结构', important: true, deadline: { date: '2026-10-08', time: '23:59' }, createdAt: t(1), updatedAt: t(1) }, // overdue Q1
+    { id: 1, title: '写 C 语言实验报告', note: '实验三，控制结构', important: true, deadline: { date: '2026-10-08', time: '23:59' }, createdAt: t(1), updatedAt: t(1),
+      /* 已经计过时：任务行上应该出现"35 分"那枚小标签 */
+      sessions: [
+        { start: at(2026, 10, 9, 20, 0).getTime(), end: at(2026, 10, 9, 20, 20).getTime(), ms: 20 * 60000 },
+        { start: at(2026, 10, 10, 9, 0).getTime(), end: at(2026, 10, 10, 9, 15).getTime(), ms: 15 * 60000 }
+      ] }, // overdue Q1
     { id: 2, title: '买洗衣液', note: '', important: false, deadline: { date: '2026-10-10', time: '18:00' }, createdAt: t(2), updatedAt: t(2) },                     // today Q3
     { id: 3, title: '期末复习计划', note: '从线性代数开始', important: true, deadline: { date: '2026-11-20', time: '' }, createdAt: t(3), updatedAt: t(3) },         // Q2
     { id: 4, title: '刷手机', note: '', important: false, deadline: null, createdAt: t(4), updatedAt: t(4) },                                                        // Q4 undated
     { id: 5, title: '交社团报名表', note: '', important: false, deadline: { date: '2026-10-12', time: '' }, createdAt: t(5), updatedAt: t(5) },                      // Q3 urgent
-    { id: 6, title: '背单词', note: '', important: false, repeat: { kind: 'daily' }, log: ['2026-10-08', '2026-10-09', '2026-10-10'], createdAt: t(6), updatedAt: t(6) }, // habit, checked today
+    { id: 6, title: '背单词', note: '', important: false, repeat: { kind: 'daily' }, log: ['2026-10-08', '2026-10-09', '2026-10-10'], createdAt: t(6), updatedAt: t(6),
+      /* 日常任务上的计时：打卡行的"累计"靠它，热力图按分钟上色也靠它 */
+      sessions: [
+        { start: at(2026, 10, 9, 7, 0).getTime(), end: at(2026, 10, 9, 7, 30).getTime(), ms: 30 * 60000 },
+        { start: at(2026, 10, 10, 7, 0).getTime(), end: at(2026, 10, 10, 7, 25).getTime(), ms: 25 * 60000 }
+      ] }, // habit, checked today
     { id: 7, title: '跑步', note: '', important: false, repeat: { kind: 'weekly', days: [1, 3, 5] }, log: ['2026-10-05', '2026-10-07', '2026-10-09'], createdAt: t(7), updatedAt: t(7) }, // habit, not due Saturday
     /* doneAt 是"完成当时"的时间戳。必须写成 NOW —— 写成 8 的话（1970 年）
        就变成"很多年前完成的"，今天一件都没做过，跟真实使用不一样。 */
     { id: 8, title: '给自行车打气', note: '', important: false, deadline: { date: '2026-10-01', time: '' }, done: true, doneAt: NOW.getTime(), createdAt: t(8), updatedAt: t(8) } // done today
   ];
   const doc = C.normalize({ version: 1, seq: 8, items: items, settings: { theme: 'clean', view: 'quad', sort: 'auto', urgentDays: 3, soonDays: 7 } });
-  return { doc: doc, json: JSON.stringify({ version: 1, seq: doc.seq, items: doc.items, settings: doc.settings }) };
+  /* timer 也要带上：存档形状必须和应用 save() 写的一模一样（见 app.js docPayload） */
+  return { doc: doc, json: JSON.stringify({ version: 1, seq: doc.seq, items: doc.items, settings: doc.settings, timer: doc.timer }) };
 }
 
 function makePage(opts) {
@@ -132,6 +143,15 @@ function makePage(opts) {
     });
   } else if (o.seed) {
     win.localStorage.setItem('wanziTodo.v1', o.seed);
+  }
+
+  /* confirm / prompt 必须在 eval 之前换掉：
+     boot() 里那个"刚才还在计时"的询问是在启动时就问的，等 eval 完了再 stub 就晚了。 */
+  if (o.confirm !== undefined) {
+    win.confirm = typeof o.confirm === 'function' ? o.confirm : () => o.confirm;
+  }
+  if (o.prompt !== undefined) {
+    win.prompt = typeof o.prompt === 'function' ? o.prompt : () => o.prompt;
   }
 
   for (const src of SRC) win.eval(src);
@@ -173,6 +193,16 @@ function makePage(opts) {
       if (value !== undefined) n.value = value;
       n.dispatchEvent(new win.Event('change', { bubbles: true }));
       return n;
+    },
+    /* 点了就点，没这个节点就返回 false。
+       反向验证时前面的断言先红了、后面这一步依赖的节点可能就不存在了 ——
+       用 click() 会抛错把整个进程打死，那时连"哪条红了"都打印不出来，
+       反向验证看到的就是 MISS 而不是 RED，分不清是"没守住"还是"崩了"。 */
+    tryClick(sel) {
+      const n = typeof sel === 'string' ? doc.querySelector(sel) : sel;
+      if (!n) return false;
+      page.click(n);
+      return true;
     },
     T: () => win.__T,
     setNow(d) { win.__T.setNow(d); },
@@ -936,6 +966,147 @@ head('20. The today screen (progress, praise, settling up)');
   p3.T().setSetting({ cheers: '换了一句', celebrate: true });
   eq('the box follows the settings when changed elsewhere', p3.$('#cheerIn').value, '换了一句');
   eq('and so does the switch', p3.$('#celebrateIn').checked, true);
+}
+
+/* ==================================================================== */
+/* 21. Timing: the focus screen, the badges, the sessions sheet          */
+/* ==================================================================== */
+
+head('21. Timing (how long each thing took)');
+
+/* 这一组里的取值一律先兜一层：反向验证时前面的断言会先红，
+   后面这些取值就可能拿到 undefined —— 直接 .length / .getAttribute 会抛错
+   把进程打死，那样打印不出"哪条红了"，反向验证只能看到 MISS。 */
+function sess(page, id) {
+  const it = page.T().core.getItem(page.T().state.doc, id);
+  return (it && it.sessions) || [];
+}
+function timerOf(page) {
+  return page.T().state.doc.timer || null;
+}
+function storedTimer(page) {
+  try {
+    const raw = JSON.parse(page.window.localStorage.getItem('wanziTodo.v1') || 'null');
+    return raw && raw.timer ? raw.timer.taskId : null;
+  } catch (e) { return null; }
+}
+function heatCell(page) {
+  const n = page.$('#heat .t2');
+  return n ? n.getAttribute('title') || '' : '';
+}
+
+{
+  /* ---- 任务行上的时长标签 ---- */
+  const p = openWithSeed();
+  p.T().setSetting({ view: 'list' });
+  includes('a task that has been timed shows its total', p.txt('#quads [data-tk="1"]'), '35 分');
+  eq('a task that was never timed shows no badge', p.n('#quads [data-tk="2"] .tk-time'), 0);
+  includes('the habit row shows a running total', p.txt('#habits'), '累计');
+
+  /* 时长标签点得开记录抽屉（它长在任务行里，不先拦就会被当成"点任务=改任务"） */
+  p.tryClick('#quads [data-tk="1"] .tk-time');
+  eq('the badge opens the sessions sheet', p.$('#sessions').hidden, false);
+  eq('and it is titled with the task', p.txt('#skTitle').indexOf('写 C 语言实验报告') >= 0, true);
+  eq('both recorded sessions are listed', p.n('#skList .sk-row'), 2);
+  p.tryClick('#skClose');
+  eq('closing it puts the sheet away', p.$('#sessions').hidden, true);
+
+  /* ---- 点右上角的表，进专注屏 ---- */
+  const p2 = openWithSeed();
+  eq('the timer button is quiet while nothing runs', p2.cls('#btnTimer').indexOf('is-timing') < 0, true);
+  eq('the focus screen is shut', p2.$('#focus').hidden, true);
+  p2.tryClick('#btnTimer');
+  eq('clicking it opens the focus screen', p2.$('#focus').hidden, false);
+  eq('with nothing running it asks which task instead of showing a clock', p2.$('#focusPick').hidden, false);
+  eq('the big clock stays out of the way', p2.$('#focusElapsed').hidden, true);
+  includes('it explains itself', p2.txt('#focusHint'), '选一件开始');
+  ok('the picker lists the open tasks', p2.n('#focusPickList [data-pick]') > 0, p2.n('#focusPickList [data-pick]'));
+  includes('including the overdue one', p2.txt('#focusPickList'), '写 C 语言实验报告');
+  notIncludes('but not the finished one', p2.txt('#focusPickList'), '给自行车打气');
+
+  /* ---- 选一件开始计 ---- */
+  p2.tryClick('#focusPickList [data-pick="2"]');
+  eq('the picker closes once the clock starts', p2.$('#focusPick').hidden, true);
+  eq('the clock is now visible', p2.$('#focusElapsed').hidden, false);
+  eq('it counts from zero', p2.txt('#focusElapsed'), '00:00');
+  eq('it says what you are doing', p2.txt('#focusTask'), '买洗衣液');
+  eq('the timer button lights up', p2.cls('#btnTimer').indexOf('is-timing') >= 0, true);
+  eq('the state remembers the task', timerOf(p2) && timerOf(p2).taskId, 2);
+  eq('and it is written to localStorage right away', storedTimer(p2), 2);
+  eq('the task row now shows a live clock', p2.n('#quads [data-tk="2"] .tk-time.is-running'), 1);
+
+  /* 时间往前走 = 时长靠时间戳相减，不靠"每秒加一" */
+  p2.setNow(at(2026, 10, 10, 15, 12));
+  eq('twelve minutes later the big clock says so', p2.txt('#focusElapsed'), '12:00');
+  includes('and the hint carries the running total', p2.txt('#focusHint'), '一共计了');
+
+  /* 同一时间只能一件：点另一件会被拦下来，并说明是谁在计 */
+  p2.T().startTiming(3);
+  eq('a second timer does not start', timerOf(p2) && timerOf(p2).taskId, 2);
+  includes('and it says which one is still running', p2.txt('.cheer'), '买洗衣液');
+
+  /* ---- 停下来，落记录 ---- */
+  p2.tryClick('#focusStop');
+  eq('the clock is cleared', timerOf(p2), null);
+  eq('a session landed on that task', sess(p2, 2).length, 1);
+  eq('with the right length', p2.T().core.timeOf(p2.T().core.getItem(p2.T().state.doc, 2) || {}), 12 * 60000);
+  includes('and it tells you what was recorded', p2.txt('.cheer'), '记下了');
+  eq('the button goes quiet again', p2.cls('#btnTimer').indexOf('is-timing') < 0, true);
+
+  /* 停两次不会重复记 */
+  p2.T().stopTiming();
+  eq('stopping again records nothing more', sess(p2, 2).length, 1);
+
+  /* ---- 太短的不记，但要说一声 ---- */
+  const p3b = openWithSeed();
+  p3b.tryClick('#btnTimer');
+  p3b.tryClick('#focusPickList [data-pick="3"]');
+  p3b.setNow(at(2026, 10, 10, 15, 0, 3));
+  p3b.tryClick('#focusStop');
+  eq('a three-second blip leaves no session', sess(p3b, 3), []);
+  includes('but it says why', p3b.txt('.cheer'), '太短了');
+
+  /* ---- 记录抽屉：删一段 ---- */
+  const p4 = openWithSeed();
+  p4.tryClick('#quads [data-tk="1"] .tk-time');
+  eq('two sessions before deleting', p4.n('#skList .sk-row'), 2);
+  p4.tryClick('#skList .sk-row:first-child .sk-del');
+  eq('one session after deleting', p4.n('#skList .sk-row'), 1);
+  eq('and the record dropped out of the doc', sess(p4, 1).length, 1);
+
+  /* ---- 改长短 ---- */
+  const p5 = openWithSeed({ prompt: () => '7' });
+  p5.tryClick('#quads [data-tk="1"] .tk-time');
+  p5.tryClick('#skList .sk-row:first-child .sk-edit');
+  eq('editing rewrites that session', sess(p5, 1).some((s) => s.ms === 7 * 60000), true);
+
+  /* ---- 热力图按时长上色 ---- */
+  const p6 = openWithSeed();
+  eq('the heatmap tints the day by how long it was', p6.n('#heat .t2'), 1);
+  includes('and the cell title spells out the duration', heatCell(p6), '分');
+
+  /* ---- 下次打开问一句"刚才还在计时" ---- */
+  const staleSeed = (() => {
+    const d = JSON.parse(seedDoc().json);
+    d.timer = { taskId: 2, startedAt: Date.now() - 10 * 60000 };
+    return JSON.stringify(d);
+  })();
+
+  const askKeep = makePage({ seed: staleSeed, confirm: () => true });
+  eq('a stale timer is offered to be finished', timerOf(askKeep), null);
+  eq('and it was recorded', askKeep.T().core.timeOf(askKeep.T().core.getItem(askKeep.T().state.doc, 2) || {}) >= 9 * 60000, true);
+
+  const askDrop = makePage({ seed: staleSeed, confirm: () => false });
+  eq('declining clears the timer', timerOf(askDrop), null);
+  eq('and records nothing', sess(askDrop, 2), []);
+
+  /* ---- 备份里要带上计时 ---- */
+  const p7 = openWithSeed();
+  p7.tryClick('#btnTimer');
+  p7.tryClick('#focusPickList [data-pick="3"]');
+  const bk = p7.T().makeBackup();
+  eq('the backup carries the running timer', bk.doc.timer && bk.doc.timer.taskId, 3);
+  eq('and the sessions ride along with the tasks', (bk.doc.items.filter((i) => i.sessions && i.sessions.length)[0] || {}).id, 1);
 }
 
 /* ==================================================================== */

@@ -42,6 +42,16 @@ html, body {
   height: 100%;
 }
 
+/* 字体栈放在变量里，方便以后换。
+   注意：`font-family` 不能写成 var(--某变量) 而那个变量又不存在 ——
+   那会让整条声明失效，浏览器退回默认字体（中文可能是宋体），看起来像"样式没生效"。
+   之前这里就是 var(--font-ui) 而 --font-ui 从来没定义过。 */
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC",
+             "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC",
+             system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
 body {
   background: var(--page-bg);
   color: var(--ink);
@@ -204,6 +214,17 @@ html[data-theme="night"] {
   cursor: pointer;
 }
 .icon-btn:active { transform: scale(.96); }
+/* 正在计时：图标按钮点起来（呼吸式），一眼能看出"还在走" */
+.icon-btn.is-timing {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  animation: btn-pulse 2.4s ease-in-out infinite;
+}
+@keyframes btn-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
 
 /* ================================ 提示条 ================================ */
 
@@ -647,6 +668,27 @@ html[data-theme="night"] {
 }
 .tk-done-when { color: var(--good); }
 
+/* 任务行上的"这件事花过多久" */
+.tk-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+  font-variant-numeric: tabular-nums;
+}
+.tk-time.is-running {
+  background: var(--accent);
+  color: #fff;
+  animation: time-blink 2s ease-in-out infinite;
+}
+@keyframes time-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .62; }
+}
+
 /* ============================== 日常打卡 ============================== */
 
 .habit {
@@ -749,6 +791,13 @@ html[data-theme="night"] {
 .heat-cell.due { background: color-mix(in srgb, var(--good) 16%, var(--card-2)); }
 .heat-cell.lv1 { background: color-mix(in srgb, var(--good) 52%, var(--card-2)); }
 .heat-cell.lv2 { background: var(--good); }
+/* 时长热力：在"打过卡"这个底子上，按当天累计分钟再压深一层。
+   用户要的是"热力图按分钟上色"，但完全按分钟重做会把"哪天打过卡"这个
+   信息弄丢 —— 所以是叠加，不是替换。 */
+.heat-cell.t1 { filter: brightness(.9); }
+.heat-cell.t2 { filter: brightness(.8) saturate(1.15); }
+.heat-cell.t3 { filter: brightness(.7) saturate(1.3); }
+.heat-cell.t4 { filter: brightness(.6) saturate(1.45); }
 .heat-cell.future { opacity: .4; }
 .heat-legend .heat-cell { width: 9px; aspect-ratio: auto; height: 9px; }
 
@@ -1081,6 +1130,194 @@ mark {
   padding: 0 1px;
 }
 
+/* ============================== 计时 / 专注 ============================== */
+/* 整屏盖住。开的时候别的什么都看不见，只有这一件事和一个大数字。 */
+
+.focus {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  padding: calc(14px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+  background: var(--app-bg);
+}
+
+.focus-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+}
+.focus-x { margin-left: -6px; }
+.focus-kicker {
+  font-size: 11.5px;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+.focus-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  min-height: 0;
+}
+.focus-task {
+  margin: 0;
+  max-width: 100%;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink);
+  word-break: break-word;
+}
+.focus-elapsed {
+  margin: 4px 0 0;
+  font-size: 62px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.focus-hint {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.focus-foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.focus-stop {
+  width: 100%;
+  padding: 15px;
+  font-size: 15px;
+  border-radius: 15px;
+}
+.focus-links {
+  display: flex;
+  gap: 8px;
+}
+.link-btn {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.link-btn:active { background: var(--card-2); }
+
+/* 选哪一件：盖在专注屏上面 */
+.focus-pick {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: calc(16px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+  background: var(--app-bg);
+}
+.focus-pick-h {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.focus-pick-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.focus-pick-item {
+  display: block;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  background: var(--card);
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.focus-pick-item:active { background: var(--card-2); }
+.focus-pick-item .pi-when {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.focus-pick-x { flex: 0 0 auto; width: 100%; }
+
+/* 计时记录：一条一段 */
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+}
+.sk-when { flex: 1 1 auto; min-width: 0; font-size: 11.5px; color: var(--ink-2); }
+.sk-when b { display: block; font-size: 10.5px; font-weight: 400; color: var(--ink-3); }
+.sk-len {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+}
+.sk-edit, .sk-del {
+  flex: 0 0 auto;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sk-del { color: var(--q1); }
+.sk-empty {
+  padding: 22px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* 打断：打卡区里"累计"那行 */
+.habit-time {
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.habit-time b {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 78%, var(--ink));
+}
+
 /* 很窄的屏（iPhone SE 一代之类）：把次要信息收掉，别挤成两行 */
 @media (max-width: 340px) {
   .hd h1 { font-size: 19px; }
@@ -1103,6 +1340,9 @@ mark {
       <h1>丸梓todo</h1>
       <p class="hd-sub" id="hdSub">先做重要的，再做紧急的</p>
     </div>
+    <button class="icon-btn" id="btnTimer" type="button" aria-label="计时">
+      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm-1 3.2a1 1 0 0 1 1.5-.87l4.4 2.6a1 1 0 0 1 0 1.73l-4.4 2.6A1 1 0 0 1 11 13.4V8.2Z" fill="currentColor"/></svg>
+    </button>
     <button class="icon-btn" id="btnSheet" type="button" aria-label="设置">
       <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm8.4-2.3.1-1.2-.1-1.2 1.7-1.3a.8.8 0 0 0 .2-1l-1.6-2.8a.8.8 0 0 0-.9-.4l-2 .8a8.6 8.6 0 0 0-2-1.2l-.3-2.1a.8.8 0 0 0-.8-.7h-3.2a.8.8 0 0 0-.8.7l-.3 2.1c-.7.3-1.4.7-2 1.2l-2-.8a.8.8 0 0 0-.9.4L2.9 8.5a.8.8 0 0 0 .2 1l1.7 1.3-.1 1.2.1 1.2-1.7 1.3a.8.8 0 0 0-.2 1l1.6 2.8c.2.3.5.5.9.4l2-.8c.6.5 1.3.9 2 1.2l.3 2.1c0 .4.4.7.8.7h3.2c.4 0 .7-.3.8-.7l.3-2.1c.7-.3 1.4-.7 2-1.2l2 .8c.4.1.7 0 .9-.4l1.6-2.8a.8.8 0 0 0-.2-1l-1.7-1.3Z" fill="currentColor"/></svg>
     </button>
@@ -1342,6 +1582,52 @@ mark {
 
     <div class="btn-row btn-row-end">
       <button class="btn btn-primary" id="setDone" type="button">完成</button>
+    </div>
+  </div>
+</section>
+
+<!-- 计时：整屏专注。开的时候别人看不见，只有这一件事和一个大数字。 -->
+<div class="focus" id="focus" hidden aria-label="计时">
+  <div class="focus-top">
+    <button class="x-btn focus-x" id="focusClose" type="button" aria-label="收起来">×</button>
+    <span class="focus-kicker" id="focusKicker">正在做</span>
+  </div>
+
+  <div class="focus-main">
+    <p class="focus-task" id="focusTask">—</p>
+    <p class="focus-elapsed" id="focusElapsed">00:00</p>
+    <p class="focus-hint" id="focusHint"></p>
+  </div>
+
+  <div class="focus-foot">
+    <button class="btn btn-primary focus-stop" id="focusStop" type="button">做完了</button>
+    <div class="focus-links">
+      <button class="link-btn" id="focusSwitch" type="button">换一件事</button>
+      <button class="link-btn" id="focusHistory" type="button">记录</button>
+    </div>
+  </div>
+
+  <!-- 选哪一件（没有在计时、或者点了"换一件事"时出现） -->
+  <div class="focus-pick" id="focusPick" hidden>
+    <p class="focus-pick-h">计哪一件？</p>
+    <div class="focus-pick-list" id="focusPickList"></div>
+    <button class="btn btn-soft focus-pick-x" id="focusPickClose" type="button">先不计</button>
+  </div>
+</div>
+
+<!-- 计时记录：每一段的开始/时长，能改能删 -->
+<div class="mask" id="skMask" hidden></div>
+<section class="sheet" id="sessions" hidden aria-label="计时记录">
+  <div class="sheet-grip"></div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="skTitle">计时记录</h2>
+      <button class="x-btn" id="skClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <div id="skList"></div>
+    <p class="fld-note" id="skNote">点一条可以改长短。计时是 5 秒以下不记的 —— 手滑点一下不该留一条。</p>
+    <div class="btn-row btn-row-end">
+      <button class="btn btn-soft" id="skDone" type="button">完成</button>
     </div>
   </div>
 </section>
@@ -1843,11 +2129,24 @@ mark {
         /* 比"今天"晚就算未来。直接比 Date，别用 daysBetween —— 那个是"整天差"，
            会把今天也算成 0，语义上不够清楚。 */
         var future = day.getTime() > ref.getTime();
+        /* 这一天在习惯上花了多少时间。计时按【开始时刻】归天，
+           跟 byDay() 的规则一致，不然跨零点的那一段会劈成两半。 */
+        var key = ymd(day);
+        var ms = 0;
+        for (var t = 0; t < habits.length; t++) {
+          var ss = habits[t].sessions || [];
+          for (var q = 0; q < ss.length; q++) {
+            if (ymd(new Date(ss[q].start)) === key) ms += ss[q].ms;
+          }
+        }
         days.push({
-          date: ymd(day),
+          date: key,
           level: hits.length ? (day.getTime() === ref.getTime() ? 2 : 1) : 0,
           due: due,
           future: future,
+          ms: ms,
+          /* 时长热力：0 = 没做，1..4 = 越来越久（10 分钟 / 半小时 / 1 小时 / 2 小时以上） */
+          tlvl: ms <= 0 ? 0 : (ms < 10 * 60000 ? 1 : ms < 30 * 60000 ? 2 : ms < 60 * 60000 ? 3 : 4),
           hits: hits
         });
       }
@@ -2030,6 +2329,209 @@ mark {
   }
 
   /* ==================================================================
+     计时（每件事做了多久 / 日常打卡累计）
+     ================================================================== */
+
+  /* 一条计时记录的时长上限：24 小时。超过就当是"忘了停"，截平。
+     （真有人一件小事做 24 小时吗？没有。但"忘了停"一觉睡醒是很常见的。） */
+  var SESSION_CAP_MS = 24 * 3600 * 1000;
+  /* 小于 5 秒的不记 —— 手滑点一下也会产生一条，攒多了全是噪音 */
+  var SESSION_MIN_MS = 5 * 1000;
+
+  /** 毫秒 → '1 小时 12 分' / '12 分 30 秒' / '45 秒'。传 0 返回 ''。 */
+  function fmtDuration(ms) {
+    var n = Math.round(Number(ms));
+    if (!(n > 0)) return '';
+    var totalSec = Math.floor(n / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    if (h > 0) return h + ' 小时' + (m > 0 ? ' ' + m + ' 分' : '');
+    /* 分钟数小的时候把秒也带上（"12 分 30 秒"比"12 分"更有实感），
+       过了一刻钟就只说分钟 —— 那时候秒已经不重要了。 */
+    if (m > 0) return m + ' 分' + (s >= 1 && m < 15 ? ' ' + s + ' 秒' : '');
+    return s + ' 秒';
+  }
+
+  /** 专注屏上用的大字：'01:12:05' / '12:05'。 */
+  function fmtClock(ms) {
+    var totalSec = Math.max(0, Math.floor(Number(ms) / 1000));
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    return (h > 0 ? pad2(h) + ':' : '') + pad2(m) + ':' + pad2(s);
+  }
+
+  /** 一条计时记录清洗。返回 null 表示丢掉。 */
+  function normalizeSession(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var start = Math.round(Number(raw.start));
+    if (!(start > 0)) return null;
+    var end = Math.round(Number(raw.end));
+    if (!(end > start)) end = start + Math.min(SESSION_CAP_MS, Math.max(0, Math.round(Number(raw.ms)) || 0));
+    var ms = Math.round(Number(raw.ms));
+    if (!(ms > 0)) ms = end - start;
+    if (!(ms > 0)) return null;
+    if (ms > SESSION_CAP_MS) ms = SESSION_CAP_MS;
+    return { start: start, end: end, ms: ms };
+  }
+
+  function normalizeSessions(raw) {
+    var out = [];
+    if (Object.prototype.toString.call(raw) !== '[object Array]') return out;
+    for (var i = 0; i < raw.length && out.length < 20000; i++) {
+      var s = normalizeSession(raw[i]);
+      if (s) out.push(s);
+    }
+    out.sort(function (a, b) { return a.start - b.start; });
+    return out;
+  }
+
+  /** 一件任务一共花了多久（毫秒）。日常任务按"每天一条"累计。 */
+  function timeOf(item) {
+    if (!item || !item.sessions) return 0;
+    var n = 0;
+    for (var i = 0; i < item.sessions.length; i++) n += item.sessions[i].ms;
+    return n;
+  }
+
+  /** 这件任务带得动文字版本的时长吗（没有就返回 ''，调用处好判断） */
+  function timeTextOf(item) {
+    return fmtDuration(timeOf(item));
+  }
+
+  /**
+   * 日常任务：把 sessions 按【本地日期】归并成 { 'YYYY-MM-DD': ms }。
+   * 用开始时刻所在的日期归天 —— 跨零点的那一次算在开始那天，
+   * 不然一笔 25 分钟的计时会因为跨了零点被劈成两天。
+   */
+  function byDay(item) {
+    var out = {};
+    if (!item || !item.sessions) return out;
+    for (var i = 0; i < item.sessions.length; i++) {
+      var s = item.sessions[i];
+      var key = ymd(new Date(s.start));
+      out[key] = (out[key] || 0) + s.ms;
+    }
+    return out;
+  }
+
+  /** 所有任务在某一天各花了多久，返回 { 'YYYY-MM-DD': ms } */
+  function dayTotals(items, now) {
+    var out = {};
+    var list = items || [];
+    for (var i = 0; i < list.length; i++) {
+      var d = byDay(list[i]);
+      for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) out[k] = (out[k] || 0) + d[k];
+    }
+    return out;
+  }
+
+  /** 今天一共计了多久（毫秒），可以把正在走的那一段也算进去 */
+  function todayTime(doc, now) {
+    var ref = startOfDay(now || new Date());
+    var key = ymd(ref);
+    var totals = dayTotals((doc && doc.items) || [], ref);
+    return totals[key] || 0;
+  }
+
+  /**
+   * 正在计时的那个任务和已经走了多久。
+   * 一律用【时间戳相减】算，不靠"每秒加一" —— iOS 上切后台/锁屏会把
+   * setInterval 冻住，靠累加会少算一大截。返回 { id, item, startedAt, elapsed } 或 null。
+   */
+  function runningTimer(doc, now) {
+    var t = doc && doc.timer;
+    if (!t || !t.taskId) return null;
+    var item = getItem(doc, t.taskId);
+    if (!item) return null;
+    var at = Math.round(Number(t.startedAt));
+    if (!(at > 0)) return null;
+    var ms = Math.max(0, (now || new Date()).getTime() - at);
+    return { id: t.taskId, item: item, startedAt: at, elapsed: Math.min(ms, SESSION_CAP_MS) };
+  }
+
+  /**
+   * 开始给某件事计时。同一时间只允许一件 —— 已经在计另一件就返回 { error }。
+   * 返回 { doc, timer }。
+   */
+  function startTimer(doc, taskId, now) {
+    var at = (now || new Date()).getTime();
+    var item = getItem(doc, taskId);
+    if (!item) return { error: 'NOT_FOUND' };
+    var run = runningTimer(doc, now || new Date());
+    if (run && run.id === taskId) return { doc: doc, timer: doc.timer, already: true };
+    if (run) return { error: 'BUSY', running: run };
+    var next = clone(doc);
+    next.timer = { taskId: taskId, startedAt: at };
+    return { doc: next, timer: next.timer };
+  }
+
+  /**
+   * 结束计时并落一条记录。
+   * 返回 { doc, ms, session, dropped }：dropped=true 表示太短（<5 秒）没记。
+   */
+  function stopTimer(doc, now) {
+    var at = (now || new Date()).getTime();
+    var run = runningTimer(doc, now || new Date());
+    if (!run) return null;
+    var next = clone(doc);
+    next.timer = null;
+    var ms = Math.min(SESSION_CAP_MS, Math.max(0, at - run.startedAt));
+    var dropped = ms < SESSION_MIN_MS;
+    var session = null;
+    if (!dropped) {
+      session = { start: run.startedAt, end: at, ms: ms };
+      for (var i = 0; i < next.items.length; i++) {
+        if (next.items[i].id !== run.id) continue;
+        if (!next.items[i].sessions) next.items[i].sessions = [];
+        next.items[i].sessions.push(session);
+        next.items[i].updatedAt = at;
+        break;
+      }
+    }
+    return { doc: next, ms: ms, session: session, dropped: dropped };
+  }
+
+  /** 丢掉正在计时的那一段（点错了 / 不想记） */
+  function cancelTimer(doc) {
+    var next = clone(doc);
+    next.timer = null;
+    return next;
+  }
+
+  /** 改某一条记录的长短（分钟）。返回新文档；找不到返回 null。 */
+  function setSessionMs(doc, taskId, index, ms) {
+    var next = clone(doc);
+    for (var i = 0; i < next.items.length; i++) {
+      if (next.items[i].id !== taskId) continue;
+      var list = next.items[i].sessions || [];
+      if (index < 0 || index >= list.length) return null;
+      var n = Math.round(Number(ms));
+      if (!(n > 0)) n = 1000;
+      if (n > SESSION_CAP_MS) n = SESSION_CAP_MS;
+      list[index].ms = n;
+      list[index].end = list[index].start + n;
+      next.items[i].updatedAt = Date.now();
+      return next;
+    }
+    return null;
+  }
+
+  /** 删掉某一条记录 */
+  function removeSession(doc, taskId, index) {
+    var next = clone(doc);
+    for (var i = 0; i < next.items.length; i++) {
+      if (next.items[i].id !== taskId) continue;
+      if (!next.items[i].sessions || index < 0 || index >= next.items[i].sessions.length) return null;
+      next.items[i].sessions.splice(index, 1);
+      next.items[i].updatedAt = Date.now();
+      return next;
+    }
+    return null;
+  }
+
+  /* ==================================================================
      规范化（坏数据不许把页面搞崩）
      ================================================================== */
 
@@ -2089,6 +2591,9 @@ mark {
       updatedAt: updatedAt
     };
     if (repeat) item.log = normalizeLog(raw.log);
+    /* 计时记录：普通任务和日常都可能有时长（日常是每天一条） */
+    var sessions = normalizeSessions(raw.sessions);
+    if (sessions.length) item.sessions = sessions;
     return item;
   }
 
@@ -2135,12 +2640,19 @@ mark {
    */
   function normalize(raw) {
     var seq = 0, items = [], settings = raw && raw.settings;
+    var timer = null;
     if (Object.prototype.toString.call(raw) === '[object Array]') {
       items = raw;
     } else if (raw && typeof raw === 'object') {
       seq = Math.round(Number(raw.seq));
       if (!(seq > 0)) seq = 0;
       if (Object.prototype.toString.call(raw.items) === '[object Array]') items = raw.items;
+      /* 正在计时的那一段。taskId 指向不存在的任务就当没有（任务被删了） */
+      if (raw.timer && typeof raw.timer === 'object') {
+        var tid = Math.round(Number(raw.timer.taskId));
+        var sat = Math.round(Number(raw.timer.startedAt));
+        if (tid > 0 && sat > 0) timer = { taskId: tid, startedAt: sat };
+      }
     }
 
     var out = [];
@@ -2154,7 +2666,9 @@ mark {
       if (it.id > seq) seq = it.id;
     }
 
-    return { version: 1, seq: seq, items: out, settings: normalizeSettings(settings) };
+    var doc = { version: 1, seq: seq, items: out, settings: normalizeSettings(settings), timer: null };
+    if (timer && seen[timer.taskId]) doc.timer = timer;
+    return doc;
   }
 
   /* ==================================================================
@@ -2487,6 +3001,15 @@ mark {
     focusGroups: focusGroups, todayProgress: todayProgress,
     daySummary: daySummary, doneStreak: doneStreak,
 
+    /* 计时 */
+    fmtDuration: fmtDuration, fmtClock: fmtClock,
+    normalizeSession: normalizeSession, normalizeSessions: normalizeSessions,
+    timeOf: timeOf, timeTextOf: timeTextOf, byDay: byDay, dayTotals: dayTotals,
+    todayTime: todayTime, runningTimer: runningTimer,
+    startTimer: startTimer, stopTimer: stopTimer, cancelTimer: cancelTimer,
+    setSessionMs: setSessionMs, removeSession: removeSession,
+    SESSION_CAP_MS: SESSION_CAP_MS, SESSION_MIN_MS: SESSION_MIN_MS,
+
     /* 文案 */
     fmtMd: fmtMd, whenText: whenText, deadlineText: deadlineText,
     countdownText: countdownText, quadrantName: quadrantName
@@ -2522,18 +3045,23 @@ mark {
     doc: C.normalize(null),
     query: '',
     doneOpen: false,
-    sheet: '',          // '' | 'edit' | 'set'
+    sheet: '',          // '' | 'edit' | 'set' | 'sessions'
     editing: 0,         // 正在编辑的任务 id，0 表示新建
     nowOverride: null,
     storageOk: true,
-    storageMsg: ''
+    storageMsg: '',
+    resumeAsked: false, // "刚才还在计时"那一问只问一次（刷新不再烦人）
+    focusOpen: false,   // 专注屏开着没
+    picking: false,     // 专注屏里"选哪一件"那一层开着没
+    skTask: 0,          // 计时记录抽屉看的是哪一件
+    askResume: null     // 启动时"刚才还在计时"的询问：null | { run }
   };
 
   /* ------------------------------------------------------------------ DOM */
 
   var el = {};
   [
-    'storageWarn', 'storageWarnText', 'hdSub', 'btnSheet', 'tick', 'tickDot', 'tickText', 'tickBars',
+    'storageWarn', 'storageWarnText', 'hdSub', 'btnSheet', 'btnTimer', 'tick', 'tickDot', 'tickText', 'tickBars',
     'searchIn', 'searchX', 'pane', 'paneInner', 'hint', 'ftCount',
     'secToday', 'todayBar', 'todayBarL', 'todayBarN', 'todayBarFill', 'todayQuote', 'today', 'settle', 'settleS',
     'secSoon', 'soon', 'soonN', 'secHabit', 'habits', 'habitN', 'heatWrap', 'heat',
@@ -2545,7 +3073,10 @@ mark {
     'edEveryN', 'repNote', 'edErr', 'edSave', 'edToggle', 'edDel',
     'setMask', 'set', 'setClose', 'themeChips', 'viewChips', 'sortChips', 'sortNote',
     'urgentChips', 'legend', 'bkExport', 'bkCopy', 'bkText', 'bkPick', 'bkMerge', 'bkReplace',
-    'bkFile', 'bkMsg', 'cheerIn', 'celebrateIn', 'setDone'
+    'bkFile', 'bkMsg', 'cheerIn', 'celebrateIn', 'setDone',
+    'focus', 'focusClose', 'focusKicker', 'focusTask', 'focusElapsed', 'focusHint',
+    'focusStop', 'focusSwitch', 'focusHistory', 'focusPick', 'focusPickList', 'focusPickClose',
+    'skMask', 'sessions', 'skTitle', 'skClose', 'skList', 'skNote', 'skDone'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
 
   /**
@@ -2587,8 +3118,18 @@ mark {
     };
   }
 
+  /**
+   * 文档 → 要存盘/备份的那个普通对象。
+   * 只在这里拼一次：以前 save() 和 makeBackup() 各写一遍，
+   * 加 timer 的时候漏掉一处就会静默丢状态。改文档形状时记得回来看这里。
+   */
+  function docPayload(doc) {
+    var out = { version: 1, seq: doc.seq, items: doc.items, settings: doc.settings, timer: doc.timer || null };
+    return out;
+  }
+
   function save() {
-    var payload = { version: 1, seq: state.doc.seq, items: state.doc.items, settings: state.doc.settings };
+    var payload = docPayload(state.doc);
     var text = JSON.stringify(payload);
     try {
       window.localStorage.setItem(LS_KEY, text);
@@ -2676,6 +3217,8 @@ mark {
     renderSearch(now);
     renderDone(now);
     renderFooter();
+    renderTimerButton(now);
+    renderFocus(now);
     paintSheet();
     /* 抽屉里的 chip、鼓励话文本框、庆祝开关都跟着设置走。
        放在 render 的最后，是因为任何一次 commit 都会走到这里 —— 以前只在
@@ -2901,6 +3444,8 @@ mark {
       var due = C.dueOn(h, now);
       if (due) { dueN++; if (on) doneN++; }
       var streak = C.streakOf(h, now);
+      var spent = C.timeOf(h);
+      var todaySpent = C.byDay(h)[C.ymd(now)] || 0;
       html += '<div class="habit' + (on ? ' is-on' : '') + '" data-habit="' + h.id + '">' +
         '<button class="tk-check' + (on ? ' on' : '') + '" type="button" data-habit="' + h.id + '" aria-label="打卡">' + CHECK_SVG + '</button>' +
         '<div class="habit-main">' +
@@ -2909,6 +3454,13 @@ mark {
         '<span class="tk-rep">' + esc(C.repeatText(h)) + '</span>' +
         (due ? '' : '<span>今天不用做</span>') +
         (streak >= 2 ? '<span>连着 ' + streak + ' 次了</span>' : '') +
+        /* 累计时长：这是用户要的"日常打卡的累计"。
+           今天那段单独说，比"总共 12 小时"更有感觉。 */
+        (spent
+          ? '<span class="habit-time">' +
+            (todaySpent ? '今天 <b>' + esc(C.fmtDuration(todaySpent)) + '</b> · ' : '') +
+            '累计 <b>' + esc(C.fmtDuration(spent)) + '</b></span>'
+          : '') +
         '</div></div>' +
         '<div class="habit-streak"><b>' + streak + '</b>连续</div>' +
         /* 打卡行原来点哪儿都是打卡，改不了也删不掉 —— 给一个明确的入口 */
@@ -2932,8 +3484,11 @@ mark {
         if (d.level === 1) cls += ' lv1';
         else if (d.level === 2) cls += ' lv2';
         else if (d.due && !d.future) cls += ' due';
+        /* 时长热力叠在"打过卡"的底子上：同一天做了多久，颜色就再压深一层 */
+        if (d.tlvl) cls += ' t' + d.tlvl;
         if (d.future) cls += ' future';
-        html += '<i class="' + cls + '" title="' + esc(d.date) + '"></i>';
+        var tip = d.date + (d.ms ? ' · ' + C.fmtDuration(d.ms) : '');
+        html += '<i class="' + cls + '" title="' + esc(tip) + '"></i>';
       }
     }
     return html;
@@ -3001,6 +3556,26 @@ mark {
    * 一条任务。左边的色条 = 象限，别把整张卡染色（三屏看下来会晕）。
    * --tk-tone 由 .q1/.q2/.q3/.q4 决定。
    */
+  /**
+   * 任务行上那枚"花过多少时间"的小标签。
+   * 正在计这一件的时候换成亮色的"走了多久"，直观点：
+   * 点开一场计时的行，能一眼确认到底在计哪件。
+   */
+  function timeBadge(it, now) {
+    var run = C.runningTimer(state.doc, now);
+    if (run && run.id === it.id) {
+      return '<button class="tk-time is-running" type="button" data-sk-open="' + it.id + '" title="看计时记录">' +
+        esc(C.fmtClock(run.elapsed)) + '</button>';
+    }
+    var total = C.timeOf(it);
+    if (!total) {
+      /* 没计过就不占地方 —— 每行都挂一个"0 分"会把界面弄脏 */
+      return '';
+    }
+    return '<button class="tk-time" type="button" data-sk-open="' + it.id + '" title="看计时记录">' +
+      esc(C.fmtDuration(total)) + '</button>';
+  }
+
   function taskHtml(it, now) {
     var q = C.quadrantOf(it, now, state.doc.settings.urgentDays);
     var u = C.urgencyOf(it, now);
@@ -3012,7 +3587,8 @@ mark {
     if (left !== null && C.urgencyOf(it, now) !== 'later') extra = '';
 
     var meta = '<div class="tk-meta">' +
-      '<span class="tk-when t-' + u + '">' + esc(when) + extra + '</span>';
+      '<span class="tk-when t-' + u + '">' + esc(when) + extra + '</span>' +
+      timeBadge(it, now);
     if (it.deadline) meta += '<span>' + esc(C.deadlineText(it, now)) + '</span>';
     if (it.note) meta += '<span>·</span><span>' + esc(it.note.length > 18 ? it.note.slice(0, 18) + '…' : it.note) + '</span>';
     meta += '</div>';
@@ -3145,16 +3721,250 @@ mark {
     if (changed && checked) celebrateCheck(id);
   }
 
+  /* ================================================================ 计时 */
+
+  /**
+   * 顶部那个计时按钮的状态。
+   * 正在计时就点亮（CSS 里做呼吸），不然就是个安静的入口。
+   */
+  function renderTimerButton(now) {
+    var run = C.runningTimer(state.doc, now);
+    el.btnTimer.classList.toggle('is-timing', !!run);
+    el.btnTimer.setAttribute('aria-label', run ? '正在计时' : '计时');
+  }
+
+  /**
+   * 整屏专注。
+   * 三种样子：没在计时（先选一件）/ 正在计时 / 正在选另一件。
+   * 只有"正在计时"才盖满屏 —— 没计时的时候按一下就进去，
+   * 但那屏上是选择列表，不是让你对着一个 0 发呆。
+   */
+  function renderFocus(now) {
+    el.focus.hidden = !state.focusOpen;
+    document.body.classList.toggle('focus-open', state.focusOpen);
+    if (!state.focusOpen) return;
+
+    var run = C.runningTimer(state.doc, now);
+    el.focusPick.hidden = !state.picking;
+    el.focusTask.hidden = !run;
+    el.focusElapsed.hidden = !run;
+    el.focusStop.hidden = !run;
+    el.focusSwitch.hidden = !run;
+    el.focusHistory.hidden = !run;
+    el.focusKicker.textContent = run ? '正在做' : '计时';
+
+    if (!run) {
+      el.focusTask.textContent = '';
+      el.focusElapsed.textContent = '';
+      el.focusHint.textContent = '选一件开始，屏幕上就只剩它。';
+      if (!state.picking) paintPicker(now);
+      el.focusPick.hidden = false;
+      return;
+    }
+
+    el.focusTask.textContent = run.item.title;
+    el.focusElapsed.textContent = C.fmtClock(run.elapsed);
+    var total = C.timeOf(run.item) + run.elapsed;
+    el.focusHint.textContent = '这件事一共计了 ' + C.fmtDuration(total) +
+      (run.item.deadline ? ' · ' + C.whenText(run.item, now) : '');
+    if (state.picking) paintPicker(now);
+  }
+
+  /** 可选的清单：没做完的普通任务 + 今天要打卡的日常 */
+  function paintPicker(now) {
+    var groups = C.focusGroups(state.doc, now);
+    var list = [];
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].items.length; j++) list.push(groups[i].items[j]);
+    }
+    /* 今天该打卡的日常也放进来 —— 背单词、跑步这种最需要计时 */
+    var hs = C.habits(state.doc);
+    for (var k = 0; k < hs.length; k++) {
+      if (C.dueOn(hs[k], now) && !C.doneToday(hs[k], now)) list.push(hs[k]);
+    }
+    if (!list.length) {
+      el.focusPickList.innerHTML = '<div class="sk-empty">没有可以计的活。<br>先把事情加进去，或者今天就歇着。</div>';
+      return;
+    }
+    var html = '';
+    for (var m = 0; m < list.length && m < 40; m++) {
+      var it = list[m];
+      var spent = C.timeOf(it);
+      html += '<button class="focus-pick-item" type="button" data-pick="' + it.id + '">' +
+        esc(it.title) +
+        '<span class="pi-when">' + esc(C.whenText(it, now)) +
+        (spent ? ' · 已计 ' + esc(C.fmtDuration(spent)) : '') +
+        '</span></button>';
+    }
+    el.focusPickList.innerHTML = html;
+  }
+
+  function openTimer() {
+    state.focusOpen = true;
+    state.picking = false;
+    renderFocus(nowDate());
+  }
+
+  function closeTimer() {
+    state.focusOpen = false;
+    state.picking = false;
+    renderFocus(nowDate());
+  }
+
+  /** 开始给某件东西计时。已经在计另一件就告诉你是谁。 */
+  function startTiming(id) {
+    var res = C.startTimer(state.doc, id, nowDate());
+    if (res.error === 'BUSY') {
+      cheerPop('「' + res.running.item.title + '」还在计，先停它');
+      state.picking = false;
+      render();
+      return;
+    }
+    if (res.error) return;
+    state.picking = false;
+    state.doc = res.doc;
+    save();
+    render();
+    pumpTimer();
+  }
+
+  /**
+   * 停下来，落一条记录。
+   * 太短的（<5 秒）不记，但要告诉用户一声 —— 不然他会以为"没生效"。
+   * 这里不调 celebrateCheck：cheerPop 只有一个位置，两句会互相顶掉。
+   */
+  function stopTiming() {
+    var run = C.runningTimer(state.doc, nowDate());
+    var res = C.stopTimer(state.doc, nowDate());
+    if (!res) return;
+    state.doc = res.doc;
+    save();
+    render();
+    if (res.dropped) {
+      cheerPop('太短了，不记');
+    } else {
+      cheerPop('记下了：' + C.fmtDuration(res.ms) + (run ? ' · ' + run.item.title : ''));
+    }
+  }
+
+  /** 丢掉正在计的这一段（点错了） */
+  function cancelTiming() {
+    var run = C.runningTimer(state.doc, nowDate());
+    if (!run) return;
+    if (!window.confirm('这段计时不要了？\n\n「' + run.item.title + '」刚才计的 ' +
+        C.fmtDuration(run.elapsed) + ' 会被丢掉。')) return;
+    state.doc = C.cancelTimer(state.doc);
+    save();
+    render();
+  }
+
+  /**
+   * 每秒把正在走的大数字刷新一下。
+   * 只动文字，不重画 —— 整屏重画会打断呼吸动画、也会让手指下按着的东西消失。
+   * 用 setInterval 只是为了"看得到在走"，真算时长永远用时间戳相减（见 runningTimer），
+   * 所以 iOS 把定时器冻住也不会算错。
+   */
+  function pumpTimer() {
+    if (timerPump) return;
+    timerPump = window.setInterval(function () {
+      if (!state.focusOpen) return;
+      var run = C.runningTimer(state.doc, nowDate());
+      if (run) el.focusElapsed.textContent = C.fmtClock(run.elapsed);
+    }, 1000);
+  }
+  var timerPump = 0;
+
+  /** 计时记录抽屉：一条一段，能改长短能删 */
+  function openSessions(taskId) {
+    state.skTask = taskId || 0;
+    openSheet('sessions');
+  }
+
+  function paintSessions() {
+    var it = C.getItem(state.doc, state.skTask);
+    var list = (it && it.sessions) || [];
+    list = list.slice().sort(function (a, b) { return b.start - a.start; });
+    el.skTitle.textContent = it ? '「' + it.title + '」' : '计时记录';
+    if (!list.length) {
+      el.skList.innerHTML = '<div class="sk-empty">还没有记录。<br>点右上角的时钟，选一件事开始计。</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      var d = new Date(s.start);
+      var when = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+      html += '<div class="sk-row" data-sk="' + i + '">' +
+        '<div class="sk-when">' + when + '<b>' + dayNameOf(d) + '</b></div>' +
+        '<span class="sk-len">' + esc(C.fmtDuration(s.ms)) + '</span>' +
+        '<button class="sk-edit" type="button" data-sk-edit="' + i + '" aria-label="改长短" title="改长短">改</button>' +
+        '<button class="sk-del" type="button" data-sk-del="' + i + '" aria-label="删掉这段" title="删掉这段">×</button>' +
+        '</div>';
+    }
+    el.skList.innerHTML = html;
+  }
+
+  function dayNameOf(d) {
+    var names = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    return names[d.getDay()];
+  }
+
+  /** 抽屉里按"新的在前"排过序，底下的数组还是原始顺序 —— 这里换回下标 */
+  function realSessionIndex(sortedIdx) {
+    var it = C.getItem(state.doc, state.skTask);
+    var list = (it && it.sessions) || [];
+    var sorted = list.slice().sort(function (a, b) { return b.start - a.start; });
+    var s = sorted[sortedIdx];
+    if (!s) return -1;
+    for (var i = 0; i < list.length; i++) if (list[i].start === s.start) return i;
+    return -1;
+  }
+
+  /** 改某一段的长短。用 prompt 问分钟数 —— 手机上原生输入框比自绘键盘靠谱。 */
+  function editSessionMs(index) {
+    var it = C.getItem(state.doc, state.skTask);
+    var list = (it && it.sessions) || [];
+    var sorted = list.slice().sort(function (a, b) { return b.start - a.start; });
+    var s = sorted[index];
+    if (!s) return;
+    var realIndex = realSessionIndex(index);
+    if (realIndex < 0) return;
+    var mins = Math.round(s.ms / 60000);
+    var raw = window.prompt('这段计了多久？（分钟）\n\n想清空就直接删掉那一段。', String(mins > 0 ? mins : 1));
+    if (raw === null) return;
+    var n = Number(raw);
+    if (!(n > 0) || !isFinite(n)) { cheerPop('那不是个分钟数'); return; }
+    var next = C.setSessionMs(state.doc, state.skTask, realIndex, Math.round(n * 60000));
+    if (!next) return;
+    state.doc = next;
+    save();
+    render();
+  }
+
+  function deleteSession(index) {
+    var realIndex = realSessionIndex(index);
+    if (realIndex < 0) return;
+    var next = C.removeSession(state.doc, state.skTask, realIndex);
+    if (!next) return;
+    state.doc = next;
+    save();
+    render();
+  }
+
   /* ================================================================ 弹层 */
 
   function paintSheet() {
     var editing = state.sheet === 'edit';
     var setting = state.sheet === 'set';
+    var sessions = state.sheet === 'sessions';
     el.edit.hidden = !editing;
     el.editMask.hidden = !editing;
     el.set.hidden = !setting;
     el.setMask.hidden = !setting;
-    document.body.classList.toggle('sheet-open', editing || setting);
+    el.sessions.hidden = !sessions;
+    el.skMask.hidden = !sessions;
+    if (sessions) paintSessions();
+    document.body.classList.toggle('sheet-open', editing || setting || sessions);
   }
 
   function openSheet(which) {
@@ -3363,9 +4173,9 @@ mark {
     commit(function () { return withSettings(state.doc, merged); });
   }
 
-  /** 原文档 + 新设置（过一遍 normalize）→ 新文档 */
+  /** 原文档 + 新设置（过一遍 normalize）→ 新文档。timer 要带着走。 */
   function withSettings(doc, rawSettings) {
-    return C.normalize({ version: 1, seq: doc.seq, items: doc.items, settings: rawSettings });
+    return C.normalize({ version: 1, seq: doc.seq, items: doc.items, settings: rawSettings, timer: doc.timer || null });
   }
 
   function applyTheme() {
@@ -3397,7 +4207,7 @@ mark {
       exportedAt: new Date().toISOString(),
       app: META.appName,
       fingerprint: fingerprint(),
-      doc: { version: 1, seq: state.doc.seq, items: state.doc.items, settings: state.doc.settings }
+      doc: docPayload(state.doc)
     };
   }
 
@@ -3440,8 +4250,17 @@ mark {
     return { ok: true, doc: doc, dropped: dropped, note: note, exportedAt: obj.exportedAt || '' };
   }
 
+  /**
+   * 把一份文档变成当前文档。
+   * 正在计时的时候恢复备份：备份里那个计时状态不能盖掉手上的 ——
+   * 否则你现在计着的这一段会凭空消失，或者变成计一件你根本没在做的事。
+   */
   function applyDoc(doc) {
-    state.doc = doc;
+    var keep = state.doc && state.doc.timer ? state.doc.timer : null;
+    var next = C.normalize({
+      version: 1, seq: doc.seq, items: doc.items, settings: doc.settings, timer: keep
+    });
+    state.doc = next;
     save();
     applyTheme();
     paintChips();
@@ -3539,11 +4358,51 @@ mark {
   function bind() {
     /* 表头 */
     el.btnSheet.addEventListener('click', function () { openSheet('set'); });
+    el.btnTimer.addEventListener('click', openTimer);
     el.setClose.addEventListener('click', closeSheet);
     el.setDone.addEventListener('click', closeSheet);
     el.setMask.addEventListener('click', closeSheet);
     el.edClose.addEventListener('click', closeSheet);
     el.editMask.addEventListener('click', closeSheet);
+
+    /* 计时：整屏专注 */
+    el.focusClose.addEventListener('click', closeTimer);
+    el.focusStop.addEventListener('click', stopTiming);
+    el.focusSwitch.addEventListener('click', function () {
+      /* 换事 = 先把当前这段结了，再选下一件。不结的话这一段就白计了。 */
+      var run = C.runningTimer(state.doc, nowDate());
+      if (run) stopTiming();
+      state.picking = true;
+      renderFocus(nowDate());
+    });
+    el.focusHistory.addEventListener('click', function () {
+      var run = C.runningTimer(state.doc, nowDate());
+      openSessions(run ? run.id : 0);
+    });
+    el.focusPickClose.addEventListener('click', function () {
+      state.picking = false;
+      /* 没在计时还点"先不计"，就整屏退出去 */
+      if (!C.runningTimer(state.doc, nowDate())) state.focusOpen = false;
+      renderFocus(nowDate());
+    });
+    el.focusPickList.addEventListener('click', function (ev) {
+      var b = ev.target.closest ? ev.target.closest('[data-pick]') : null;
+      if (!b) return;
+      startTiming(+b.getAttribute('data-pick'));
+    });
+
+    /* 计时记录抽屉 */
+    el.skClose.addEventListener('click', closeSheet);
+    el.skDone.addEventListener('click', closeSheet);
+    el.skMask.addEventListener('click', closeSheet);
+    el.skList.addEventListener('click', function (ev) {
+      var ed = ev.target.closest ? ev.target.closest('[data-sk-edit]') : null;
+      if (ed) { editSessionMs(+ed.getAttribute('data-sk-edit')); return; }
+      var del = ev.target.closest ? ev.target.closest('[data-sk-del]') : null;
+      if (del) { deleteSession(+del.getAttribute('data-sk-del')); return; }
+      var row = ev.target.closest ? ev.target.closest('[data-sk]') : null;
+      if (row) editSessionMs(+row.getAttribute('data-sk'));
+    });
 
     /* 加一条 */
     el.fab.addEventListener('click', function () { openEdit(0); });
@@ -3551,6 +4410,14 @@ mark {
     /* 列表点击（事件委托 —— 重渲染会换掉 DOM，绑在旧节点上会失效） */
     el.pane.addEventListener('click', function (ev) {
       var t = ev.target;
+      /* 那枚时长小标签要排在最前面：它在任务行里面，
+         不先拦下来就会被当成"点任务 = 改任务" */
+      var tb = t.closest ? t.closest('[data-sk-open]') : null;
+      if (tb) {
+        ev.stopPropagation();
+        openSessions(+tb.getAttribute('data-sk-open'));
+        return;
+      }
       var node = t.closest ? t.closest('[data-check]') : null;
       if (node) {
         ev.stopPropagation();
@@ -3718,6 +4585,43 @@ mark {
     });
   }
 
+  /**
+   * 用户要的「下次打开弹窗问」：之前有一段时间一直在计（切走了、杀了 App、
+   * 或者干脆忘了一整夜），下次打开先问一句，别让那个数字一直挂着。
+   *
+   * 只问一次：问完（不管结还是丢）就把标记清掉，不然一刷新又弹。
+   * 一分钟以内不问 —— 那多半只是切出去看了一眼又回来。
+   */
+  function maybeAskResume() {
+    var run = C.runningTimer(state.doc, nowDate());
+    if (!run) return;
+    if (state.resumeAsked) return;
+    state.resumeAsked = true;
+    if (run.elapsed < 60000) { pumpTimer(); return; }
+
+    var howLong = C.fmtDuration(run.elapsed);
+    var asked = window.confirm(
+      '刚才还在计时：\n\n「' + run.item.title + '」已经计了 ' + howLong + '。\n\n' +
+      '现在结束并记下来？（点"取消"就把这段丢掉）'
+    );
+    if (asked) {
+      var res = C.stopTimer(state.doc, nowDate());
+      if (res && !res.dropped) {
+        state.doc = res.doc;
+        save();
+        cheerPop('记下了：' + C.fmtDuration(res.ms));
+      } else {
+        state.doc = C.cancelTimer(state.doc);
+        save();
+      }
+    } else {
+      state.doc = C.cancelTimer(state.doc);
+      save();
+    }
+    render();
+    pumpTimer();
+  }
+
   /* -------------------------------------------------------------- 心跳 */
 
   var lastKey = '';
@@ -3742,10 +4646,11 @@ mark {
     bind();
     lastKey = '';
     tick();
+    maybeAskResume();
 
     /* iOS 回前台会把定时器冻住，回来先补一次 */
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) tick();
+      if (!document.hidden) { lastKey = ''; tick(); }
     });
     window.addEventListener('resize', function () { /* 布局靠 CSS，重画一次保证"今天"是对的 */ tick(); });
     setInterval(tick, 20000);
@@ -3798,6 +4703,17 @@ mark {
     applyDoc: applyDoc,
     heatHtml: heatHtml,
     form: form,
+    /* 计时 */
+    openTimer: openTimer,
+    closeTimer: closeTimer,
+    startTiming: startTiming,
+    stopTiming: stopTiming,
+    cancelTiming: cancelTiming,
+    openSessions: openSessions,
+    paintSessions: paintSessions,
+    editSessionMs: editSessionMs,
+    deleteSession: deleteSession,
+    maybeAskResume: maybeAskResume,
     setNow: function (d) {
       state.nowOverride = d ? new Date(d) : null;
       lastKey = '';

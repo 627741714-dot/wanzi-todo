@@ -27,6 +27,9 @@
       <h1>丸梓todo</h1>
       <p class="hd-sub" id="hdSub">先做重要的，再做紧急的</p>
     </div>
+    <button class="icon-btn" id="btnTimer" type="button" aria-label="计时">
+      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm-1 3.2a1 1 0 0 1 1.5-.87l4.4 2.6a1 1 0 0 1 0 1.73l-4.4 2.6A1 1 0 0 1 11 13.4V8.2Z" fill="currentColor"/></svg>
+    </button>
     <button class="icon-btn" id="btnSheet" type="button" aria-label="设置">
       <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm8.4-2.3.1-1.2-.1-1.2 1.7-1.3a.8.8 0 0 0 .2-1l-1.6-2.8a.8.8 0 0 0-.9-.4l-2 .8a8.6 8.6 0 0 0-2-1.2l-.3-2.1a.8.8 0 0 0-.8-.7h-3.2a.8.8 0 0 0-.8.7l-.3 2.1c-.7.3-1.4.7-2 1.2l-2-.8a.8.8 0 0 0-.9.4L2.9 8.5a.8.8 0 0 0 .2 1l1.7 1.3-.1 1.2.1 1.2-1.7 1.3a.8.8 0 0 0-.2 1l1.6 2.8c.2.3.5.5.9.4l2-.8c.6.5 1.3.9 2 1.2l.3 2.1c0 .4.4.7.8.7h3.2c.4 0 .7-.3.8-.7l.3-2.1c.7-.3 1.4-.7 2-1.2l2 .8c.4.1.7 0 .9-.4l1.6-2.8a.8.8 0 0 0-.2-1l-1.7-1.3Z" fill="currentColor"/></svg>
     </button>
@@ -266,6 +269,52 @@
 
     <div class="btn-row btn-row-end">
       <button class="btn btn-primary" id="setDone" type="button">完成</button>
+    </div>
+  </div>
+</section>
+
+<!-- 计时：整屏专注。开的时候别人看不见，只有这一件事和一个大数字。 -->
+<div class="focus" id="focus" hidden aria-label="计时">
+  <div class="focus-top">
+    <button class="x-btn focus-x" id="focusClose" type="button" aria-label="收起来">×</button>
+    <span class="focus-kicker" id="focusKicker">正在做</span>
+  </div>
+
+  <div class="focus-main">
+    <p class="focus-task" id="focusTask">—</p>
+    <p class="focus-elapsed" id="focusElapsed">00:00</p>
+    <p class="focus-hint" id="focusHint"></p>
+  </div>
+
+  <div class="focus-foot">
+    <button class="btn btn-primary focus-stop" id="focusStop" type="button">做完了</button>
+    <div class="focus-links">
+      <button class="link-btn" id="focusSwitch" type="button">换一件事</button>
+      <button class="link-btn" id="focusHistory" type="button">记录</button>
+    </div>
+  </div>
+
+  <!-- 选哪一件（没有在计时、或者点了"换一件事"时出现） -->
+  <div class="focus-pick" id="focusPick" hidden>
+    <p class="focus-pick-h">计哪一件？</p>
+    <div class="focus-pick-list" id="focusPickList"></div>
+    <button class="btn btn-soft focus-pick-x" id="focusPickClose" type="button">先不计</button>
+  </div>
+</div>
+
+<!-- 计时记录：每一段的开始/时长，能改能删 -->
+<div class="mask" id="skMask" hidden></div>
+<section class="sheet" id="sessions" hidden aria-label="计时记录">
+  <div class="sheet-grip"></div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="skTitle">计时记录</h2>
+      <button class="x-btn" id="skClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <div id="skList"></div>
+    <p class="fld-note" id="skNote">点一条可以改长短。计时是 5 秒以下不记的 —— 手滑点一下不该留一条。</p>
+    <div class="btn-row btn-row-end">
+      <button class="btn btn-soft" id="skDone" type="button">完成</button>
     </div>
   </div>
 </section>

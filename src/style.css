@@ -26,6 +26,16 @@ html, body {
   height: 100%;
 }
 
+/* 字体栈放在变量里，方便以后换。
+   注意：`font-family` 不能写成 var(--某变量) 而那个变量又不存在 ——
+   那会让整条声明失效，浏览器退回默认字体（中文可能是宋体），看起来像"样式没生效"。
+   之前这里就是 var(--font-ui) 而 --font-ui 从来没定义过。 */
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC",
+             "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC",
+             system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
 body {
   background: var(--page-bg);
   color: var(--ink);
@@ -188,6 +198,17 @@ html[data-theme="night"] {
   cursor: pointer;
 }
 .icon-btn:active { transform: scale(.96); }
+/* 正在计时：图标按钮点起来（呼吸式），一眼能看出"还在走" */
+.icon-btn.is-timing {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  animation: btn-pulse 2.4s ease-in-out infinite;
+}
+@keyframes btn-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
 
 /* ================================ 提示条 ================================ */
 
@@ -631,6 +652,27 @@ html[data-theme="night"] {
 }
 .tk-done-when { color: var(--good); }
 
+/* 任务行上的"这件事花过多久" */
+.tk-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+  font-variant-numeric: tabular-nums;
+}
+.tk-time.is-running {
+  background: var(--accent);
+  color: #fff;
+  animation: time-blink 2s ease-in-out infinite;
+}
+@keyframes time-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .62; }
+}
+
 /* ============================== 日常打卡 ============================== */
 
 .habit {
@@ -733,6 +775,13 @@ html[data-theme="night"] {
 .heat-cell.due { background: color-mix(in srgb, var(--good) 16%, var(--card-2)); }
 .heat-cell.lv1 { background: color-mix(in srgb, var(--good) 52%, var(--card-2)); }
 .heat-cell.lv2 { background: var(--good); }
+/* 时长热力：在"打过卡"这个底子上，按当天累计分钟再压深一层。
+   用户要的是"热力图按分钟上色"，但完全按分钟重做会把"哪天打过卡"这个
+   信息弄丢 —— 所以是叠加，不是替换。 */
+.heat-cell.t1 { filter: brightness(.9); }
+.heat-cell.t2 { filter: brightness(.8) saturate(1.15); }
+.heat-cell.t3 { filter: brightness(.7) saturate(1.3); }
+.heat-cell.t4 { filter: brightness(.6) saturate(1.45); }
 .heat-cell.future { opacity: .4; }
 .heat-legend .heat-cell { width: 9px; aspect-ratio: auto; height: 9px; }
 
@@ -1063,6 +1112,194 @@ mark {
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
+}
+
+/* ============================== 计时 / 专注 ============================== */
+/* 整屏盖住。开的时候别的什么都看不见，只有这一件事和一个大数字。 */
+
+.focus {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  padding: calc(14px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+  background: var(--app-bg);
+}
+
+.focus-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+}
+.focus-x { margin-left: -6px; }
+.focus-kicker {
+  font-size: 11.5px;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+.focus-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  min-height: 0;
+}
+.focus-task {
+  margin: 0;
+  max-width: 100%;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink);
+  word-break: break-word;
+}
+.focus-elapsed {
+  margin: 4px 0 0;
+  font-size: 62px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.focus-hint {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.focus-foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.focus-stop {
+  width: 100%;
+  padding: 15px;
+  font-size: 15px;
+  border-radius: 15px;
+}
+.focus-links {
+  display: flex;
+  gap: 8px;
+}
+.link-btn {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.link-btn:active { background: var(--card-2); }
+
+/* 选哪一件：盖在专注屏上面 */
+.focus-pick {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: calc(16px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+  background: var(--app-bg);
+}
+.focus-pick-h {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.focus-pick-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.focus-pick-item {
+  display: block;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  background: var(--card);
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.focus-pick-item:active { background: var(--card-2); }
+.focus-pick-item .pi-when {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.focus-pick-x { flex: 0 0 auto; width: 100%; }
+
+/* 计时记录：一条一段 */
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+}
+.sk-when { flex: 1 1 auto; min-width: 0; font-size: 11.5px; color: var(--ink-2); }
+.sk-when b { display: block; font-size: 10.5px; font-weight: 400; color: var(--ink-3); }
+.sk-len {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+}
+.sk-edit, .sk-del {
+  flex: 0 0 auto;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sk-del { color: var(--q1); }
+.sk-empty {
+  padding: 22px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* 打断：打卡区里"累计"那行 */
+.habit-time {
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.habit-time b {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 78%, var(--ink));
 }
 
 /* 很窄的屏（iPhone SE 一代之类）：把次要信息收掉，别挤成两行 */

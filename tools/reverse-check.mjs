@@ -101,6 +101,52 @@ const CASES = [
     find: "    if (mine.length) return mine;",
     replace: "    if (false && mine.length) return mine;",
     expect: 'and it uses the custom line'
+  },
+  {
+    /* 计时的核心：时长必须是"当前时间 − 开始时间"。
+       一旦退回成 0，锁屏十分钟就只记成十秒 —— 这是这个功能最容易写错的地方。 */
+    name: 'the elapsed time is computed from the wall clock',
+    file: 'core',
+    find: "    var ms = Math.max(0, (now || new Date()).getTime() - at);",
+    replace: "    var ms = 0;",
+    expect: 'twelve minutes later the big clock says so'
+  },
+  {
+    name: 'only one timer may run at a time',
+    file: 'core',
+    find: "    if (run) return { error: 'BUSY', running: run };",
+    replace: "    if (false) return { error: 'BUSY', running: run };",
+    expect: 'a second timer does not start'
+  },
+  {
+    /* 时长标签长在任务行里面，不先拦下来就会被当成"点任务 = 改任务" */
+    name: 'the duration badge opens the record instead of the edit form',
+    file: 'app',
+    find: "      var tb = t.closest ? t.closest('[data-sk-open]') : null;",
+    replace: "      var tb = null;",
+    expect: 'the badge opens the sessions sheet'
+  },
+  {
+    name: 'a timer left running overnight is asked about on the next open',
+    file: 'app',
+    find: "    if (run.elapsed < 60000) { pumpTimer(); return; }",
+    replace: "    if (true) { pumpTimer(); return; }",
+    expect: 'a stale timer is offered to be finished'
+  },
+  {
+    /* 存盘/备份那份 payload 漏掉 timer 的话，正在计的那一段就静默丢了 */
+    name: 'the running timer survives a save',
+    file: 'app',
+    find: "    var out = { version: 1, seq: doc.seq, items: doc.items, settings: doc.settings, timer: doc.timer || null };",
+    replace: "    var out = { version: 1, seq: doc.seq, items: doc.items, settings: doc.settings, timer: null };",
+    expect: 'and it is written to localStorage right away'
+  },
+  {
+    name: 'the total on a task row actually adds the sessions up',
+    file: 'core',
+    find: "    for (var i = 0; i < item.sessions.length; i++) n += item.sessions[i].ms;",
+    replace: "    for (var i = 0; i < item.sessions.length; i++) n += 0;",
+    expect: 'a task that has been timed shows its total'
   }
 ];
 
@@ -130,8 +176,8 @@ let bad = 0;
  *   2) 把关卡过的源码另存一份快照，之后每次还原都从快照来，不信任磁盘现状。
  */
 const MUST_HAVE = {
-  app: ["if (!title) {", "function saveForm()", "function bkRestore(mode)"],
-  core: ["var lim = typeof urgentDays === 'number' ? urgentDays : D.URGENT_DAYS;", "function scoreOf(item, now)", "function normalize(raw)"]
+  app: ["if (!title) {", "function saveForm()", "function bkRestore(mode)", "function docPayload(doc)"],
+  core: ["var lim = typeof urgentDays === 'number' ? urgentDays : D.URGENT_DAYS;", "function scoreOf(item, now)", "function normalize(raw)", "function runningTimer(doc, now)"]
 };
 
 for (const k of ['app', 'core']) {

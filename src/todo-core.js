@@ -300,11 +300,24 @@
         /* 比"今天"晚就算未来。直接比 Date，别用 daysBetween —— 那个是"整天差"，
            会把今天也算成 0，语义上不够清楚。 */
         var future = day.getTime() > ref.getTime();
+        /* 这一天在习惯上花了多少时间。计时按【开始时刻】归天，
+           跟 byDay() 的规则一致，不然跨零点的那一段会劈成两半。 */
+        var key = ymd(day);
+        var ms = 0;
+        for (var t = 0; t < habits.length; t++) {
+          var ss = habits[t].sessions || [];
+          for (var q = 0; q < ss.length; q++) {
+            if (ymd(new Date(ss[q].start)) === key) ms += ss[q].ms;
+          }
+        }
         days.push({
-          date: ymd(day),
+          date: key,
           level: hits.length ? (day.getTime() === ref.getTime() ? 2 : 1) : 0,
           due: due,
           future: future,
+          ms: ms,
+          /* 时长热力：0 = 没做，1..4 = 越来越久（10 分钟 / 半小时 / 1 小时 / 2 小时以上） */
+          tlvl: ms <= 0 ? 0 : (ms < 10 * 60000 ? 1 : ms < 30 * 60000 ? 2 : ms < 60 * 60000 ? 3 : 4),
           hits: hits
         });
       }
@@ -487,6 +500,209 @@
   }
 
   /* ==================================================================
+     计时（每件事做了多久 / 日常打卡累计）
+     ================================================================== */
+
+  /* 一条计时记录的时长上限：24 小时。超过就当是"忘了停"，截平。
+     （真有人一件小事做 24 小时吗？没有。但"忘了停"一觉睡醒是很常见的。） */
+  var SESSION_CAP_MS = 24 * 3600 * 1000;
+  /* 小于 5 秒的不记 —— 手滑点一下也会产生一条，攒多了全是噪音 */
+  var SESSION_MIN_MS = 5 * 1000;
+
+  /** 毫秒 → '1 小时 12 分' / '12 分 30 秒' / '45 秒'。传 0 返回 ''。 */
+  function fmtDuration(ms) {
+    var n = Math.round(Number(ms));
+    if (!(n > 0)) return '';
+    var totalSec = Math.floor(n / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    if (h > 0) return h + ' 小时' + (m > 0 ? ' ' + m + ' 分' : '');
+    /* 分钟数小的时候把秒也带上（"12 分 30 秒"比"12 分"更有实感），
+       过了一刻钟就只说分钟 —— 那时候秒已经不重要了。 */
+    if (m > 0) return m + ' 分' + (s >= 1 && m < 15 ? ' ' + s + ' 秒' : '');
+    return s + ' 秒';
+  }
+
+  /** 专注屏上用的大字：'01:12:05' / '12:05'。 */
+  function fmtClock(ms) {
+    var totalSec = Math.max(0, Math.floor(Number(ms) / 1000));
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    return (h > 0 ? pad2(h) + ':' : '') + pad2(m) + ':' + pad2(s);
+  }
+
+  /** 一条计时记录清洗。返回 null 表示丢掉。 */
+  function normalizeSession(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var start = Math.round(Number(raw.start));
+    if (!(start > 0)) return null;
+    var end = Math.round(Number(raw.end));
+    if (!(end > start)) end = start + Math.min(SESSION_CAP_MS, Math.max(0, Math.round(Number(raw.ms)) || 0));
+    var ms = Math.round(Number(raw.ms));
+    if (!(ms > 0)) ms = end - start;
+    if (!(ms > 0)) return null;
+    if (ms > SESSION_CAP_MS) ms = SESSION_CAP_MS;
+    return { start: start, end: end, ms: ms };
+  }
+
+  function normalizeSessions(raw) {
+    var out = [];
+    if (Object.prototype.toString.call(raw) !== '[object Array]') return out;
+    for (var i = 0; i < raw.length && out.length < 20000; i++) {
+      var s = normalizeSession(raw[i]);
+      if (s) out.push(s);
+    }
+    out.sort(function (a, b) { return a.start - b.start; });
+    return out;
+  }
+
+  /** 一件任务一共花了多久（毫秒）。日常任务按"每天一条"累计。 */
+  function timeOf(item) {
+    if (!item || !item.sessions) return 0;
+    var n = 0;
+    for (var i = 0; i < item.sessions.length; i++) n += item.sessions[i].ms;
+    return n;
+  }
+
+  /** 这件任务带得动文字版本的时长吗（没有就返回 ''，调用处好判断） */
+  function timeTextOf(item) {
+    return fmtDuration(timeOf(item));
+  }
+
+  /**
+   * 日常任务：把 sessions 按【本地日期】归并成 { 'YYYY-MM-DD': ms }。
+   * 用开始时刻所在的日期归天 —— 跨零点的那一次算在开始那天，
+   * 不然一笔 25 分钟的计时会因为跨了零点被劈成两天。
+   */
+  function byDay(item) {
+    var out = {};
+    if (!item || !item.sessions) return out;
+    for (var i = 0; i < item.sessions.length; i++) {
+      var s = item.sessions[i];
+      var key = ymd(new Date(s.start));
+      out[key] = (out[key] || 0) + s.ms;
+    }
+    return out;
+  }
+
+  /** 所有任务在某一天各花了多久，返回 { 'YYYY-MM-DD': ms } */
+  function dayTotals(items, now) {
+    var out = {};
+    var list = items || [];
+    for (var i = 0; i < list.length; i++) {
+      var d = byDay(list[i]);
+      for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) out[k] = (out[k] || 0) + d[k];
+    }
+    return out;
+  }
+
+  /** 今天一共计了多久（毫秒），可以把正在走的那一段也算进去 */
+  function todayTime(doc, now) {
+    var ref = startOfDay(now || new Date());
+    var key = ymd(ref);
+    var totals = dayTotals((doc && doc.items) || [], ref);
+    return totals[key] || 0;
+  }
+
+  /**
+   * 正在计时的那个任务和已经走了多久。
+   * 一律用【时间戳相减】算，不靠"每秒加一" —— iOS 上切后台/锁屏会把
+   * setInterval 冻住，靠累加会少算一大截。返回 { id, item, startedAt, elapsed } 或 null。
+   */
+  function runningTimer(doc, now) {
+    var t = doc && doc.timer;
+    if (!t || !t.taskId) return null;
+    var item = getItem(doc, t.taskId);
+    if (!item) return null;
+    var at = Math.round(Number(t.startedAt));
+    if (!(at > 0)) return null;
+    var ms = Math.max(0, (now || new Date()).getTime() - at);
+    return { id: t.taskId, item: item, startedAt: at, elapsed: Math.min(ms, SESSION_CAP_MS) };
+  }
+
+  /**
+   * 开始给某件事计时。同一时间只允许一件 —— 已经在计另一件就返回 { error }。
+   * 返回 { doc, timer }。
+   */
+  function startTimer(doc, taskId, now) {
+    var at = (now || new Date()).getTime();
+    var item = getItem(doc, taskId);
+    if (!item) return { error: 'NOT_FOUND' };
+    var run = runningTimer(doc, now || new Date());
+    if (run && run.id === taskId) return { doc: doc, timer: doc.timer, already: true };
+    if (run) return { error: 'BUSY', running: run };
+    var next = clone(doc);
+    next.timer = { taskId: taskId, startedAt: at };
+    return { doc: next, timer: next.timer };
+  }
+
+  /**
+   * 结束计时并落一条记录。
+   * 返回 { doc, ms, session, dropped }：dropped=true 表示太短（<5 秒）没记。
+   */
+  function stopTimer(doc, now) {
+    var at = (now || new Date()).getTime();
+    var run = runningTimer(doc, now || new Date());
+    if (!run) return null;
+    var next = clone(doc);
+    next.timer = null;
+    var ms = Math.min(SESSION_CAP_MS, Math.max(0, at - run.startedAt));
+    var dropped = ms < SESSION_MIN_MS;
+    var session = null;
+    if (!dropped) {
+      session = { start: run.startedAt, end: at, ms: ms };
+      for (var i = 0; i < next.items.length; i++) {
+        if (next.items[i].id !== run.id) continue;
+        if (!next.items[i].sessions) next.items[i].sessions = [];
+        next.items[i].sessions.push(session);
+        next.items[i].updatedAt = at;
+        break;
+      }
+    }
+    return { doc: next, ms: ms, session: session, dropped: dropped };
+  }
+
+  /** 丢掉正在计时的那一段（点错了 / 不想记） */
+  function cancelTimer(doc) {
+    var next = clone(doc);
+    next.timer = null;
+    return next;
+  }
+
+  /** 改某一条记录的长短（分钟）。返回新文档；找不到返回 null。 */
+  function setSessionMs(doc, taskId, index, ms) {
+    var next = clone(doc);
+    for (var i = 0; i < next.items.length; i++) {
+      if (next.items[i].id !== taskId) continue;
+      var list = next.items[i].sessions || [];
+      if (index < 0 || index >= list.length) return null;
+      var n = Math.round(Number(ms));
+      if (!(n > 0)) n = 1000;
+      if (n > SESSION_CAP_MS) n = SESSION_CAP_MS;
+      list[index].ms = n;
+      list[index].end = list[index].start + n;
+      next.items[i].updatedAt = Date.now();
+      return next;
+    }
+    return null;
+  }
+
+  /** 删掉某一条记录 */
+  function removeSession(doc, taskId, index) {
+    var next = clone(doc);
+    for (var i = 0; i < next.items.length; i++) {
+      if (next.items[i].id !== taskId) continue;
+      if (!next.items[i].sessions || index < 0 || index >= next.items[i].sessions.length) return null;
+      next.items[i].sessions.splice(index, 1);
+      next.items[i].updatedAt = Date.now();
+      return next;
+    }
+    return null;
+  }
+
+  /* ==================================================================
      规范化（坏数据不许把页面搞崩）
      ================================================================== */
 
@@ -546,6 +762,9 @@
       updatedAt: updatedAt
     };
     if (repeat) item.log = normalizeLog(raw.log);
+    /* 计时记录：普通任务和日常都可能有时长（日常是每天一条） */
+    var sessions = normalizeSessions(raw.sessions);
+    if (sessions.length) item.sessions = sessions;
     return item;
   }
 
@@ -592,12 +811,19 @@
    */
   function normalize(raw) {
     var seq = 0, items = [], settings = raw && raw.settings;
+    var timer = null;
     if (Object.prototype.toString.call(raw) === '[object Array]') {
       items = raw;
     } else if (raw && typeof raw === 'object') {
       seq = Math.round(Number(raw.seq));
       if (!(seq > 0)) seq = 0;
       if (Object.prototype.toString.call(raw.items) === '[object Array]') items = raw.items;
+      /* 正在计时的那一段。taskId 指向不存在的任务就当没有（任务被删了） */
+      if (raw.timer && typeof raw.timer === 'object') {
+        var tid = Math.round(Number(raw.timer.taskId));
+        var sat = Math.round(Number(raw.timer.startedAt));
+        if (tid > 0 && sat > 0) timer = { taskId: tid, startedAt: sat };
+      }
     }
 
     var out = [];
@@ -611,7 +837,9 @@
       if (it.id > seq) seq = it.id;
     }
 
-    return { version: 1, seq: seq, items: out, settings: normalizeSettings(settings) };
+    var doc = { version: 1, seq: seq, items: out, settings: normalizeSettings(settings), timer: null };
+    if (timer && seen[timer.taskId]) doc.timer = timer;
+    return doc;
   }
 
   /* ==================================================================
@@ -943,6 +1171,15 @@
     cheerPool: cheerPool, cheerFor: cheerFor, milestoneText: milestoneText,
     focusGroups: focusGroups, todayProgress: todayProgress,
     daySummary: daySummary, doneStreak: doneStreak,
+
+    /* 计时 */
+    fmtDuration: fmtDuration, fmtClock: fmtClock,
+    normalizeSession: normalizeSession, normalizeSessions: normalizeSessions,
+    timeOf: timeOf, timeTextOf: timeTextOf, byDay: byDay, dayTotals: dayTotals,
+    todayTime: todayTime, runningTimer: runningTimer,
+    startTimer: startTimer, stopTimer: stopTimer, cancelTimer: cancelTimer,
+    setSessionMs: setSessionMs, removeSession: removeSession,
+    SESSION_CAP_MS: SESSION_CAP_MS, SESSION_MIN_MS: SESSION_MIN_MS,
 
     /* 文案 */
     fmtMd: fmtMd, whenText: whenText, deadlineText: deadlineText,

@@ -69,6 +69,11 @@ const T = (y, m, d, hh, mm) => new Date(y, m - 1, d, hh || 0, mm || 0).getTime()
 const SEED_ITEMS = [
   { id: 1, title: 'C 语言实验报告', note: '第三章：链表。要交电子版 + 打印一份', important: true, done: false,
     deadline: { date: '2026-10-08', time: '18:00' }, repeat: null, log: [],
+    /* 已经计过两次时：任务行上会挂一枚"1 小时 5 分" */
+    sessions: [
+      { start: T(2026, 10, 8, 19, 0), end: T(2026, 10, 8, 19, 40), ms: 40 * 60000 },
+      { start: T(2026, 10, 9, 21, 0), end: T(2026, 10, 9, 21, 25), ms: 25 * 60000 }
+    ],
     createdAt: T(2026, 10, 1, 9, 12), updatedAt: T(2026, 10, 1, 9, 12) },
   { id: 2, title: '工科数学分析 期中复习', note: '第七、八章是重点，上次小测就栽在级数上', important: true, done: false,
     deadline: { date: '2026-10-12', time: '20:00' }, repeat: null, log: [],
@@ -88,6 +93,12 @@ const SEED_ITEMS = [
   { id: 7, title: '背单词', note: '', important: false, done: false,
     deadline: null, repeat: { kind: 'daily', days: [], n: null },
     log: ['2026-09-20', '2026-10-08', '2026-10-09', '2026-10-10'],
+    /* 打卡行上的"今天 X · 累计 Y"就靠它；热力图也按分钟上色 */
+    sessions: [
+      { start: T(2026, 10, 8, 7, 20), end: T(2026, 10, 8, 7, 45), ms: 25 * 60000 },
+      { start: T(2026, 10, 9, 7, 15), end: T(2026, 10, 9, 7, 35), ms: 20 * 60000 },
+      { start: T(2026, 10, 10, 7, 10), end: T(2026, 10, 10, 7, 42), ms: 32 * 60000 }
+    ],
     createdAt: T(2026, 9, 10, 7, 30), updatedAt: T(2026, 10, 10, 7, 35) },
   { id: 8, title: '操场跑 3 公里', note: '', important: false, done: false,
     deadline: null, repeat: { kind: 'weekly', days: [1, 3, 5], n: null },
@@ -176,7 +187,19 @@ export function driverScript() {
       si.value = q.get('search');
       si.dispatchEvent(new Event('input'));
     }
-    if (q.get('sheet')) T.openSheet(q.get('sheet'));   /* set | edit */
+    if (q.get('sessionsFor')) T.openSessions(+q.get('sessionsFor'));
+    if (q.get('timer')) {
+      /* 先开始计时，再把开始时刻往前挪 ago 分钟 —— 不然大数字永远停在 00:00。
+         直接挪 startedAt 而不是"等一会儿"，是因为这里的时间是钉死的。 */
+      T.startTiming(+q.get('timer'));
+      var ago = +(q.get('ago') || 0);
+      if (ago && window.__T.state.doc.timer) {
+        window.__T.state.doc.timer.startedAt -= ago * 60000;
+        T.render();
+      }
+      T.openTimer();
+    }
+    if (q.get('sheet')) T.openSheet(q.get('sheet'));   /* set | edit | sessions */
     if (q.get('sheetBottom')) {
       var sh = document.getElementById('set');
       if (sh) sh.scrollTop = sh.scrollHeight;
@@ -336,8 +359,10 @@ async function shoot(browser, cfg) {
     if (CHECK_ONLY) return { name: cfg.name, ok: true, note: info };
 
     /* 整页截图：先把手机视口撑到整页高（.phone 是 100dvh，不撑就会被截断），
-       再用 captureBeyondViewport + clip 取整页 */
-    const capH = Math.min(Math.max(shot.fullH, PHONE_H), 2600);
+       再用 captureBeyondViewport + clip 取整页。
+       整屏盖住的那种（专注屏 position:fixed inset:0）例外：它只有一屏高，
+       按整页截会把中间那块拉到 1600px，看起来像排版坏了 —— 就按 844 截。 */
+    const capH = cfg.viewport ? PHONE_H : Math.min(Math.max(shot.fullH, PHONE_H), 2600);
     await page.send('Emulation.setDeviceMetricsOverride', {
       width: PHONE_W, height: capH, deviceScaleFactor: 1, mobile: true
     });
@@ -380,7 +405,9 @@ const SHOTS = [
   { name: '15-设置-备份', query: 'pickTheme=clean&sheet=set&sheetBottom=1' },
   { name: '16-已完成归档', query: 'pickTheme=clean&view=list&done=1' },
   { name: '17-今天-紧急界线改 7 天', query: 'pickTheme=clean&view=focus&urgent=7' },
-  { name: '18-空清单', query: 'pickTheme=clean&view=focus', seed: 0, allowEmpty: true }
+  { name: '18-今天-开始计时', query: 'pickTheme=clean&view=focus&timer=1&ago=26', viewport: 1 },
+  { name: '19-计时记录', query: 'pickTheme=clean&view=list&sessionsFor=1' },
+  { name: '20-空清单', query: 'pickTheme=clean&view=focus', seed: 0, allowEmpty: true }
 ];
 
 /* -------------------------------------------------------------------- 主流程 */

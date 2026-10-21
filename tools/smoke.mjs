@@ -499,6 +499,140 @@ eq('countdownText counts hours when a time is set', C.countdownText(C.normalizeI
 eq('countdownText flags a time that already passed', C.countdownText(C.normalizeItem(task(35, 'x', { deadline: dl('2026-10-10', '09:00') })), NOW), '今天截止（时间已过）');
 eq('quadrantName maps back', C.quadrantName('q1'), '重要且紧急');
 
+/* ============================================================ 7 计时 */
+
+head('7. Timing (how long did each thing take)');
+
+/* --- 格式化 --- */
+eq('fmtDuration for 45 seconds', C.fmtDuration(45000), '45 秒');
+eq('fmtDuration for 12 min 30 sec', C.fmtDuration(12 * 60000 + 30000), '12 分 30 秒');
+eq('fmtDuration drops seconds once past a quarter hour', C.fmtDuration(25 * 60000 + 30000), '25 分');
+eq('fmtDuration for 1 h 12 min', C.fmtDuration((60 + 12) * 60000), '1 小时 12 分');
+eq('fmtDuration for a whole hour', C.fmtDuration(3600000), '1 小时');
+eq('fmtDuration of nothing is empty', C.fmtDuration(0), '');
+eq('fmtDuration of garbage is empty', C.fmtDuration(-5), '');
+eq('fmtClock pads to mm:ss', C.fmtClock(65 * 1000), '01:05');
+eq('fmtClock adds hours when needed', C.fmtClock(3725 * 1000), '01:02:05');
+
+/* --- 开始 / 结束 --- */
+const tdoc = docWith([task(1, '写实验报告'), task(2, '背单词'), task(3, '跑步', { repeat: { kind: 'daily' } })]);
+
+const started = C.startTimer(tdoc, 1, at(2026, 10, 10, 9, 0));
+ok('starting a timer returns a doc', !!started.doc);
+eq('the running task id is remembered', started.doc.timer.taskId, 1);
+eq('the start timestamp is exact', started.doc.timer.startedAt, at(2026, 10, 10, 9, 0).getTime());
+
+/* 关键：时长靠时间戳相减，不靠"每秒加一" —— iOS 切后台会把定时器冻住 */
+const run10 = C.runningTimer(started.doc, at(2026, 10, 10, 9, 10));
+eq('10 minutes later the elapsed is 10 minutes', run10.elapsed, 10 * 60000);
+const run3h = C.runningTimer(started.doc, at(2026, 10, 10, 12, 0));
+eq('3 hours later it knows it has been 3 hours', run3h.elapsed, 3 * 3600000);
+
+/* 同一时间只允许一件 */
+const busy = C.startTimer(started.doc, 2, at(2026, 10, 10, 9, 5));
+eq('a second timer is refused while one runs', busy.error, 'BUSY');
+eq('and it tells you which one is running', busy.running.id, 1);
+eq('the doc is untouched when refused', busy.doc, undefined);
+
+/* 重复点同一件不算重开 */
+const again = C.startTimer(started.doc, 1, at(2026, 10, 10, 9, 30));
+eq('restarting the same task does not reset the clock', again.already, true);
+eq('and the start time is still the first one', again.doc.timer.startedAt, at(2026, 10, 10, 9, 0).getTime());
+
+/* --- 停下并落记录 --- */
+const stopped = C.stopTimer(started.doc, at(2026, 10, 10, 9, 10));
+eq('stopping records the session length', stopped.ms, 10 * 60000);
+eq('the timer is cleared', stopped.doc.timer, null);
+eq('the session lands on the right task', C.getItem(stopped.doc, 1).sessions.length, 1);
+eq('the other task gets nothing', C.getItem(stopped.doc, 2).sessions, undefined);
+eq('the total time of that task is 10 minutes', C.timeOf(C.getItem(stopped.doc, 1)), 10 * 60000);
+
+/* 第二条累加 */
+const s2 = C.startTimer(stopped.doc, 1, at(2026, 10, 10, 14, 0)).doc;
+const stopped2 = C.stopTimer(s2, at(2026, 10, 10, 14, 20));
+eq('a second session adds up', C.timeOf(C.getItem(stopped2.doc, 1)), 30 * 60000);
+eq('both sessions are kept separately', C.getItem(stopped2.doc, 1).sessions.length, 2);
+
+/* 太短的不记，但要说一声 */
+const tiny = C.stopTimer(C.startTimer(tdoc, 1, at(2026, 10, 10, 9, 0)).doc, at(2026, 10, 10, 9, 0, 3));
+eq('a 3-second blip is not recorded', tiny.session, null);
+eq('but it is flagged as dropped so the UI can say so', tiny.dropped, true);
+eq('and nothing was added to the task', C.getItem(tiny.doc, 1).sessions, undefined);
+
+/* 停下来的时候没有在计时 */
+eq('stopping when nothing runs returns null', C.stopTimer(tdoc, NOW), null);
+
+/* 忘了停：超过 24 小时截平，不会记出一个"计了三天" */
+const cap = C.runningTimer(
+  C.startTimer(tdoc, 1, at(2026, 10, 1, 9, 0)).doc,
+  at(2026, 10, 10, 9, 0)
+);
+eq('an abandoned timer is capped at 24 hours', cap.elapsed, C.SESSION_CAP_MS);
+const capStop = C.stopTimer(C.startTimer(tdoc, 1, at(2026, 10, 1, 9, 0)).doc, at(2026, 10, 10, 9, 0));
+eq('and the recorded session is capped too', capStop.ms, C.SESSION_CAP_MS);
+
+/* 点错了：丢掉 */
+const cancelled = C.cancelTimer(started.doc);
+eq('cancelling clears the timer', cancelled.timer, null);
+eq('cancelling records nothing', C.getItem(cancelled, 1).sessions, undefined);
+
+/* --- 按天归并（日常打卡的累计要用） --- */
+const dayDoc = C.normalize({
+  seq: 3,
+  items: [
+    task(1, '背单词', {
+      repeat: { kind: 'daily' },
+      sessions: [
+        { start: at(2026, 10, 9, 8, 0).getTime(), end: at(2026, 10, 9, 8, 20).getTime(), ms: 20 * 60000 },
+        { start: at(2026, 10, 10, 8, 0).getTime(), end: at(2026, 10, 10, 8, 15).getTime(), ms: 15 * 60000 },
+        { start: at(2026, 10, 10, 20, 0).getTime(), end: at(2026, 10, 10, 20, 10).getTime(), ms: 10 * 60000 }
+      ]
+    }),
+    task(2, '跑步', {
+      repeat: { kind: 'daily' },
+      sessions: [{ start: at(2026, 10, 10, 7, 0).getTime(), end: at(2026, 10, 10, 7, 40).getTime(), ms: 40 * 60000 }]
+    })
+  ]
+});
+const perDay = C.byDay(C.getItem(dayDoc, 1));
+eq('per-day totals merge the same day', perDay['2026-10-10'], 25 * 60000);
+eq('and keep other days apart', perDay['2026-10-09'], 20 * 60000);
+eq('all tasks on one day add up', C.dayTotals(dayDoc.items, NOW)['2026-10-10'], 65 * 60000);
+eq('todayTime is just today', C.todayTime(dayDoc, NOW), 65 * 60000);
+const habitTotal = C.timeOf(C.getItem(dayDoc, 1));
+eq('a habit accumulates across days', habitTotal, 45 * 60000);
+
+/* --- 改长短 / 删一段 --- */
+const edited = C.setSessionMs(dayDoc, 2, 0, 30 * 60000);
+eq('editing a session changes its length', C.getItem(edited, 2).sessions[0].ms, 30 * 60000);
+eq('and the end time follows', C.getItem(edited, 2).sessions[0].end - C.getItem(edited, 2).sessions[0].start, 30 * 60000);
+eq('editing an out-of-range index returns null', C.setSessionMs(dayDoc, 2, 99, 60000), null);
+eq('editing a missing task returns null', C.setSessionMs(dayDoc, 99, 0, 60000), null);
+const gone = C.removeSession(dayDoc, 2, 0);
+eq('deleting a session removes it', C.getItem(gone, 2).sessions, []);
+eq('deleting an out-of-range index returns null', C.removeSession(dayDoc, 2, 5), null);
+
+/* --- 坏数据 --- */
+const broken = C.normalize({
+  seq: 1,
+  items: [task(1, 'x', {
+    sessions: [
+      null,
+      { start: 0, end: 0, ms: 0 },
+      { start: -5, ms: 1000 },
+      { start: 1000, end: 5000, ms: 4000 },
+      { start: 2000, end: 2000, ms: -1 },
+      { start: 3000, ms: 7000 }
+    ]
+  })],
+  timer: { taskId: 99, startedAt: 5000 }
+});
+eq('bad sessions are dropped, good ones kept', C.getItem(broken, 1).sessions.length, 2);
+eq('a timer pointing at a deleted task is dropped', broken.timer, null);
+const keepTimer = C.normalize({ seq: 1, items: [task(1, 'x')], timer: { taskId: 1, startedAt: 5000 } });
+eq('a timer pointing at a live task is kept', keepTimer.timer.taskId, 1);
+eq('a doc with no sessions field is fine', C.timeOf(C.getItem(C.normalize({ items: [task(1, 'x')] }), 1)), 0);
+
 /* ==================================================================== */
 
 console.log('\n--------------------------------------------------');
